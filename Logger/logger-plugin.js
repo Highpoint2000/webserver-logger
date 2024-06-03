@@ -1,406 +1,346 @@
 //////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                ///
-///  SCANNER SCRIPT FOR FM-DX-WEBSERVER (V1.1)                                     ///
+///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.0)                                      ///
 ///                                                                                /// 
 ///  by Highpoint                                                                  ///
-///  mod by PE5PVB - Will only work with PE5PVB ESP32 firmware                     ///
 ///																				   ///
-///                                                        last update: 31.05.24   ///
-//////////////////////////////////////////////////////////////////////////////////////
-
-const isESP32WithPE5PVB = true;  // Set to true if ESP32 with PE5PVB firmware is being used
-
+///                                                         last update: 03.06.24  ///
 //////////////////////////////////////////////////////////////////////////////////////
 
 (() => {
-    const scannerPlugin = (() => {   
+    const loggerPlugin = (() => {
 
-        let scanInterval;
-        let currentFrequency = 0.0;
-        let previousFrequency = null;
-        let previousPiCode = null;
-        let isScanning = false;
-        let frequencySocket = null;
-        let piCode = '?';
-
-        const localHost = window.location.host;
-        const wsUrl = `ws://${localHost}/text`;
-
-        function setupWebSocket() {
-            // WebSocket setup
-            if (!isESP32WithPE5PVB) {
-                if (!frequencySocket || frequencySocket.readyState === WebSocket.CLOSED) {
-                    frequencySocket = new WebSocket(wsUrl);
-
-                    frequencySocket.addEventListener("open", () => {
-                        console.log("WebSocket connected.");
-                    });
-
-                    frequencySocket.addEventListener("error", (error) => {
-                        console.error("WebSocket error:", error);
-                    });
-
-                    frequencySocket.addEventListener("close", () => {
-                        console.log("WebSocket closed.");
-                        // Try to reconnect
-                        setTimeout(setupWebSocket, 1000);
-                    });
-                }
-            }
-        }
-
-        function sendDataToClient(frequency) {
-            // Send data via WebSocket
-            if (frequencySocket && frequencySocket.readyState === WebSocket.OPEN) {
-                const dataToSend = `T${(frequency * 1000).toFixed(0)}`;
-                frequencySocket.send(dataToSend);
-                console.log("WebSocket sent:", dataToSend);
-            } else {
-                console.error('WebSocket not open.');
-                setTimeout(() => sendDataToClient(frequency), 500); // Retry after a short delay
-            }
-        }
-
-        // Function to send a command to the client via WebSockets
-        function sendCommandToClient(command) {
-            // Determine the WebSocket protocol based on the current page
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            // Determine the host of the current page
-            const host = window.location.host;
-            // Construct the WebSocket URL
-            const wsUrl = `${protocol}//${host}/text`;
-
-            // Create a WebSocket connection to the specified URL
-            const autoScanSocket = new WebSocket(wsUrl);
-
-            // Event listener for opening the WebSocket connection
-            autoScanSocket.addEventListener("open", () => {
-                console.log("WebSocket connected.");
-                // Send the command via the WebSocket connection
-                console.log("Sending command:", command);
-                autoScanSocket.send(command);
-            });
-
-            // Event listener for WebSocket errors
-            autoScanSocket.addEventListener("error", (error) => {
-                console.error("WebSocket error:", error);
-            });
-
-            // Event listener for receiving a message from the server
-            autoScanSocket.addEventListener("message", (event) => {
-                // Close the WebSocket connection after receiving the response
-                autoScanSocket.close();
-            });
-
-            // Event listener for closing the WebSocket connection
-            autoScanSocket.addEventListener("close", () => {
-                console.log("WebSocket closed.");
-            });
-        }
-
-        function waitForServer() {
-            // Wait for the server to be available
-            if (typeof window.socket !== "undefined") {
-                window.socket.addEventListener("message", (event) => {
-                    const parsedData = JSON.parse(event.data);
-                    const newPiCode = parsedData.pi;
-                    const freq = parsedData.freq;
-
-                    if (newPiCode !== previousPiCode) {
-                        previousPiCode = newPiCode;
-                        if (!isESP32WithPE5PVB) {
-                            checkPiCode(newPiCode);
-                        }
-                    }
-
-                    if (freq !== previousFrequency) {
-                        previousFrequency = freq;
-                    }
-
-                    currentFrequency = freq;
-                });
-            } else {
-                console.error('Socket is not defined.');
-                setTimeout(waitForServer, 250);
-            }
-        }
-
-        waitForServer();
-
-        function startScan(direction) {
-            // Start scanning in the specified direction
-            console.log('Scan started in direction:', direction);
-
-            if (isScanning) {
-                clearInterval(scanInterval);
-                console.log('Previous scan stopped.');
-            }
-
-            const tuningRangeText = document.querySelector('#tuner-desc .color-4').innerText;
-            const tuningLowerLimit = parseFloat(tuningRangeText.split(' MHz')[0]);
-            const tuningUpperLimit = parseFloat(tuningRangeText.split(' MHz')[1].split(' - ')[1]);
-
-            if (isNaN(currentFrequency) || currentFrequency === 0.0) {
-                currentFrequency = tuningLowerLimit;
-            }
-
-            function updateFrequency() {
-                currentFrequency = Math.round(currentFrequency * 10) / 10; // Round to one decimal place
-                if (direction === 'up') {
-                    currentFrequency += 0.1;
-                    if (currentFrequency > tuningUpperLimit) {
-                        currentFrequency = tuningLowerLimit;
-                    }
-                } else if (direction === 'down') {
-                    currentFrequency -= 0.1;
-                    if (currentFrequency < tuningLowerLimit) {
-                        currentFrequency = tuningUpperLimit;
-                    }
-                }
-
-                currentFrequency = Math.round(currentFrequency * 10) / 10;
-                console.log("Current frequency:", currentFrequency);
-                sendDataToClient(currentFrequency);
-            }
-
-            piCode = '?';
-            updateFrequency();
-            isScanning = true;
-            scanInterval = setInterval(updateFrequency, 500);
-            console.log('New scan started.');
-        }
-
-        function checkPiCode(receivedPiCode) {
-            // Check if the received Pi code is valid
-            if (receivedPiCode.length > 1) {
-                clearInterval(scanInterval);
-                isScanning = false;
-                piCode = '?';
-                console.log('Scan aborted because the Pi code has more than one character.');
-            }
-        }
-
-        function restartScan(direction) {
-            // Restart scanning in the specified direction
-            console.log('Restarting scan in direction:', direction);
-            clearInterval(scanInterval);
-            isScanning = false;
-            piCode = '?';
-            setTimeout(() => startScan(direction), 150);
-        }
-
-        function ScannerButtons() {
-            // Create buttons for controlling the scanner
-            const scannerDownButton = document.createElement('button');
-            scannerDownButton.id = 'scanner-down';
-            scannerDownButton.setAttribute('aria-label', 'Scan Down');
-            scannerDownButton.classList.add('rectangular-downbutton');
-            scannerDownButton.innerHTML = '<i class="fa-solid fa-chevron-left"></i><i class="fa-solid fa-chevron-left"></i>';
-
-            const scannerUpButton = document.createElement('button');
-            scannerUpButton.id = 'scanner-up';
-            scannerUpButton.setAttribute('aria-label', 'Scan Up');
-            scannerUpButton.classList.add('rectangular-upbutton');
-            scannerUpButton.innerHTML = '<i class="fa-solid fa-chevron-right"></i><i class="fa-solid fa-chevron-right"></i>';
-
-            const rectangularButtonStyle = `
-                .rectangular-downbutton {
-                    border: 3px solid #ccc;
-                    border-radius: 0px;
-                    padding: 5px 10px;
-                    background-color: #fff;
-                    color: #333;
-                    cursor: pointer;
-                    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-                    margin-left: 1px;
-                }
-
-                .rectangular-upbutton {
-                    border: 3px solid #ccc;
-                    border-radius: 0px;
-                    padding: 5px 10px;
-                    background-color: #fff;
-                    color: #333;
-                    cursor: pointer;
-                    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-                    margin-right: 1px;
-                }
-
-                .rectangular-button:hover {
-                    background-color: #f0f0f0;
-                    border-color: #aaa;
-                }
-            `;
-
-            const styleElement = document.createElement('style');
-            styleElement.innerHTML = rectangularButtonStyle;
-            document.head.appendChild(styleElement);
-
-            const freqDownButton = document.getElementById('freq-down');
-            freqDownButton.parentNode.insertBefore(scannerDownButton, freqDownButton.nextSibling);
-
-            const freqUpButton = document.getElementById('freq-up');
-            freqUpButton.parentNode.insertBefore(scannerUpButton, freqUpButton);
-
-            if (isESP32WithPE5PVB) {
-                scannerDownButton.addEventListener('click', function() {
-                    sendCommandToClient('C1');
-                });
-
-                scannerUpButton.addEventListener('click', function() {
-                    sendCommandToClient('C2');
-                });
-            } else {
-                scannerDownButton.addEventListener('click', function() {
-                    restartScan('down');
-                });
-
-                scannerUpButton.addEventListener('click', function() {
-                    restartScan('up');
-                });
-            }
-        }
-
-        // WebSocket and scanner button initialization
-        setupWebSocket();
-        ScannerButtons();
-    })();
-
-    // AUTO Scan INSERTER FOR FM-DX-WEBSERVER (V1.0)
-    // by Highpoint
-    // powered by PE5PVB
-    // last update: 31.05.24
-
-    // Function to send a command to the client via WebSockets
-    function sendCommandToClient(command) {
-        // Determine the WebSocket protocol based on the current page
+        let displayedPiCodes = [];
+        let logDataArray = [];
+        const previousDataByFrequency = {};
+        let currentFrequency = "";
+        let previousFrequency = "";
+        let autoScanSocket;
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        // Determine the host of the current page
         const host = window.location.host;
-        // Construct the WebSocket URL
         const wsUrl = `${protocol}//${host}/text`;
 
-        // Create a WebSocket connection to the specified URL
-        const autoScanSocket = new WebSocket(wsUrl);
+        function setupWebSocket() {
+            if (!autoScanSocket || autoScanSocket.readyState === WebSocket.CLOSED) {
+                autoScanSocket = new WebSocket(wsUrl);
 
-        // Event listener for opening the WebSocket connection
-        autoScanSocket.addEventListener("open", () => {
-            console.log("WebSocket-Connected.");
-            // Send the command via the WebSocket connection
-            console.log("Sending command:", command);
-            autoScanSocket.send(command);
-        });
+                autoScanSocket.addEventListener("open", () => {
+                    console.log("WebSocket connected.");
+                });
 
-        // Event listener for WebSocket errors
-        autoScanSocket.addEventListener("error", (error) => {
-            console.error("WebSocket-error:", error);
-        });
+                autoScanSocket.addEventListener("message", handleWebSocketMessage);
 
-        // Event listener for receiving a message from the server
-        autoScanSocket.addEventListener("message", (event) => {
-            // Close the WebSocket connection after receiving the response
-            autoScanSocket.close();
-        });
+                autoScanSocket.addEventListener("error", (error) => {
+                    console.error("WebSocket error:", error);
+                });
 
-        // Event listener for closing the WebSocket connection
-        autoScanSocket.addEventListener("close", () => {
-            console.log("WebSocket-Closed.");
-        });
-    }
-
-function setCookie(name, value, days) {
-    const date = new Date();
-    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-    const expires = "expires=" + date.toUTCString();
-    document.cookie = name + "=" + value + ";" + expires + ";path=/";
-}
-
-function getCookie(name) {
-    const cookieName = name + "=";
-    const decodedCookie = decodeURIComponent(document.cookie);
-    const cookieArray = decodedCookie.split(';');
-    for (let i = 0; i < cookieArray.length; i++) {
-        let cookie = cookieArray[i];
-        while (cookie.charAt(0) == ' ') {
-            cookie = cookie.substring(1);
+                setInterval(() => {
+                    autoScanSocket.send(JSON.stringify({ action: "ping" }));
+                }, 250);
+            }
         }
-        if (cookie.indexOf(cookieName) == 0) {
-            return cookie.substring(cookieName.length, cookie.length);
+
+        function handleWebSocketMessage(event) {
+            const eventData = JSON.parse(event.data);
+            const frequency = eventData.freq;
+            const txInfo = eventData.txInfo;
+
+            let ps = eventData.ps;
+            if (eventData.ps_errors !== "0,0,0,0,0,0,0,0") {
+                ps += "?";
+            }
+
+            previousDataByFrequency[frequency] = {
+                picode: eventData.pi,
+                ps: ps,
+                station: txInfo ? txInfo.station : "",
+                pol: txInfo ? txInfo.pol : "",
+                erp: txInfo ? txInfo.erp : "",
+                city: txInfo ? txInfo.city : "",
+                itu: txInfo ? txInfo.itu : "",
+                distance: txInfo ? txInfo.distance : "",
+                azimuth: txInfo ? txInfo.azimuth : ""
+            };
+
+            if (currentFrequency !== frequency) {
+                previousFrequency = currentFrequency;
+                currentFrequency = frequency;
+                displayExtractedData();
+            }
         }
-    }
-    return "";
-}
 
-function initialize() {
-    const ScannerButton = document.createElement('button');
-	ScannerButton.classList.add('hide-phone');
-    ScannerButton.id = 'Scan-on-off';
-    ScannerButton.setAttribute('aria-label', 'Scan');
-    ScannerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
-    ScannerButton.style.borderRadius = '0px 0px 0px 0px';
-    ScannerButton.style.width = 'calc(100% - 2px)';
-    ScannerButton.style.margin = '0 1px';
-    ScannerButton.style.position = 'relative';
-    ScannerButton.style.top = '0px';
-    ScannerButton.style.right = '0px';
-    ScannerButton.innerHTML = 'Auto Scan<br><strong>OFF</strong>';
-    ScannerButton.classList.add('bg-color-3');
+        const extractedDataContainer = document.createElement("div");
+        extractedDataContainer.id = "extracted-data-container";
+        document.body.appendChild(extractedDataContainer);
 
-	if (isESP32WithPE5PVB) {
+        let loggingDataAdded = false;
 
-    const buttonEq = document.querySelector('.button-eq');
-    const buttonIms = document.querySelector('.button-ims');
+        function displayExtractedData() {
+            let parentContainer = document.querySelector(".canvas-container.hide-phone");
+            if (!parentContainer) {
+                parentContainer = document.createElement("div");
+                parentContainer.className = "canvas-container hide-phone";
+                document.body.appendChild(parentContainer);
+            }
 
-	const newDiv = document.createElement('div');
-	newDiv.className = "hide-phone panel-50 no-bg h-100 m-0";
-	newDiv.appendChild(ScannerButton);
+            let loggingCanvas = document.getElementById("logging-canvas");
+            if (!loggingCanvas) {
+                loggingCanvas = document.createElement("div");
+                loggingCanvas.id = "logging-canvas";
+                loggingCanvas.style.height = "175px";
+                loggingCanvas.style.width = "96.5%";
+                loggingCanvas.style.margin = "0px auto 0";
+                parentContainer.appendChild(loggingCanvas);
+                loggingCanvas.style.display = 'none';
+            }
 
-    buttonEq.parentNode.insertBefore(newDiv, buttonIms);
+            if (!loggingDataAdded) {
+                const loggingDataDiv = document.createElement("div");
+                loggingDataDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>date | time | freq | pi | ps | name | pol | erp | city | itu | dist | az</strong></h2>";
+                loggingDataDiv.style.padding = "10px";
+                loggingDataDiv.style.display = "flex";
+                loggingDataDiv.style.alignItems = "center";
+                loggingCanvas.appendChild(loggingDataDiv);
 
-	}
+                const downloadButtonsContainer = document.createElement("div");
+                downloadButtonsContainer.style.display = "flex";
+                downloadButtonsContainer.style.marginLeft = "auto";
 
-    let isScanOn = getCookie('isScanOn') === 'true';
-    let blinkInterval;
+                const DownloadButtonTXT = createDownloadButtonTXT();
+                downloadButtonsContainer.appendChild(DownloadButtonTXT);
 
-    function toggleScan() {
-        const ScanButton = document.getElementById('Scan-on-off');
-        isScanOn = !isScanOn;
-        setCookie('isScanOn', isScanOn, 365);
+                const DownloadButtonCSV = createDownloadButtonCSV();
+                downloadButtonsContainer.appendChild(DownloadButtonCSV);
 
-        if (isScanOn) {
-            ScanButton.classList.remove('bg-color-3');
-            ScanButton.classList.add('bg-color-4');
-            clearInterval(blinkInterval);
-			sendCommandToClient('J1');
-            blinkInterval = setInterval(function() {
-                ScanButton.classList.toggle('bg-color-3');
-                ScanButton.classList.toggle('bg-color-4');
-            }, 500);
-        } else {
-            ScanButton.classList.remove('bg-color-4');
-            ScanButton.classList.add('bg-color-3');
-            clearInterval(blinkInterval);
-			sendCommandToClient('J0');
+                loggingDataDiv.appendChild(downloadButtonsContainer);
+                loggingDataAdded = true;
+            }
+
+            let outputCanvas = document.getElementById("output-canvas");
+            if (!outputCanvas) {
+                outputCanvas = document.createElement("div");
+                outputCanvas.id = "output-canvas";
+                outputCanvas.style.overflow = "auto";
+                outputCanvas.style.height = "117px";
+                loggingCanvas.appendChild(outputCanvas);
+            }
+
+            if (previousFrequency && previousDataByFrequency[previousFrequency] && previousDataByFrequency[previousFrequency].picode.length > 1) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                const datetime = `${year}-${month}-${day} | ${hours}:${minutes}:${seconds}`;
+
+                const data = previousDataByFrequency[previousFrequency];
+                const station = data.station;
+                const pol = data.pol;
+                const erp = data.erp;
+                const city = data.city;
+                const itu = data.itu;
+                const distance = data.distance;
+                const azimuth = data.azimuth;
+
+                const picode = data.picode;
+                const ps = data.ps.replace(/ /g, "_");
+                const outputText = station ? `${datetime} | ${previousFrequency} | ${picode} | ${ps} | ${station} | ${pol} | ${erp} | ${city} | ${itu} | ${distance} | ${azimuth}` : `${datetime} | ${previousFrequency} | ${picode} | ${ps}`;
+
+                logDataArray.push(outputText);
+
+                const outputDiv = document.createElement("div");
+                outputDiv.textContent = outputText;
+                outputDiv.style.fontSize = "16px";
+                outputDiv.style.marginBottom = "-1px";
+                outputDiv.style.padding = "0 10px";
+
+                outputCanvas.appendChild(outputDiv);
+
+                // Scroll to the bottom to show the last 5 entries
+                outputCanvas.scrollTop = outputCanvas.scrollHeight - outputCanvas.clientHeight;
+            }
+
+            outputCanvas.style.position = "relative";
+            outputCanvas.style.top = "0px";
+            outputCanvas.style.left = "0px";
+            outputCanvas.style.padding = "0";
+            loggingCanvas.style.padding = "0px";
+            var h2Style = window.getComputedStyle(document.querySelector('h2'));
+            var borderColor = h2Style.color;
+            loggingCanvas.style.border = "1px solid " + borderColor;
         }
-        // Adjust button text based on state
-        ScanButton.innerHTML = `Auto Scan<br><strong>${isScanOn ? 'ON' : 'OFF'}</strong>`;
-        // Add any other actions here, like sending commands to the client
-    }
 
-    const ScanButton = document.getElementById('Scan-on-off');
-    ScanButton.addEventListener('click', toggleScan);
+        function createDownloadButtonTXT() {
+            const DownloadButtonTXT = document.createElement("button");
+            DownloadButtonTXT.textContent = "TXT";
+            DownloadButtonTXT.style.width = "50px";
+            DownloadButtonTXT.style.height = "20px";
+            DownloadButtonTXT.style.marginRight = "5px";
+            DownloadButtonTXT.style.display = "flex";
+            DownloadButtonTXT.style.alignItems = "center";
+            DownloadButtonTXT.style.justifyContent = "center";
+            DownloadButtonTXT.addEventListener("click", function() {
+                downloadDataTXT();
+            });
 
-    // Start blinking if button initially set to ON
-    if (isScanOn) {
-        blinkInterval = setInterval(function() {
-            ScanButton.classList.toggle('bg-color-3');
-            ScanButton.classList.toggle('bg-color-4');
-        }, 500);
-    }
-}
+            return DownloadButtonTXT;
+        }
 
-// Initialize the customizations after the page loads
-window.addEventListener('load', initialize);
+        function createDownloadButtonCSV() {
+            const DownloadButtonCSV = document.createElement("button");
+            DownloadButtonCSV.textContent = "CSV";
+            DownloadButtonCSV.style.width = "50px";
+            DownloadButtonCSV.style.height = "20px";
+            DownloadButtonCSV.style.display = "flex";
+            DownloadButtonCSV.style.alignItems = "center";
+            DownloadButtonCSV.style.justifyContent = "center";
+            DownloadButtonCSV.addEventListener("click", function() {
+                downloadDataCSV();
+            });
+
+            return DownloadButtonCSV;
+        }
+
+        function downloadDataTXT() {
+            const filename = "logging_data.txt";
+            let allData = "DATA LOGGER date | time | freq | pi | ps | name | pol | erp | city | itu | dist | az\n";
+
+            logDataArray.forEach(line => {
+                allData += line + '\n';
+            });
+
+            const blob = new Blob([allData], { type: "text/plain" });
+
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+            } else {
+                const link = document.createElement("a");
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                window.URL.revokeObjectURL(link.href);
+            }
+        }
+
+        function downloadDataCSV() {
+            const filename = "logging_data.csv";
+            let allData = "DATA LOGGER\ndate;time;freq;pi;ps;name;pol;erp;city;itu;dist;az\n";
+
+            logDataArray.forEach(line => {
+                const modifiedLine = line.replaceAll(" | ", ";");
+                allData += modifiedLine + '\n';
+            });
+
+            const blob = new Blob([allData], { type: "text/plain" });
+
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+            } else {
+                const link = document.createElement("a");
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                window.URL.revokeObjectURL(link.href);
+            }
+        }
+
+        function initializeLoggerButton() {
+            setupWebSocket();
+
+            const LoggerButton = document.createElement('button');
+            LoggerButton.classList.add('hide-phone');
+            LoggerButton.id = 'Log-on-off';
+            LoggerButton.setAttribute('aria-label', 'Scan');
+            LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
+            LoggerButton.style.borderRadius = '0px 0px 0px 0px';
+            LoggerButton.style.width = '100px';
+            LoggerButton.style.margin = '0 1px';
+            LoggerButton.style.position = 'relative';
+            LoggerButton.style.top = '0px';
+            LoggerButton.style.right = '0px';
+            LoggerButton.innerHTML = '<strong>DATA LOGGER</strong>';
+            LoggerButton.classList.add('bg-color-3');
+
+            const wrapperElement = document.querySelector('.tuner-info');
+            if (wrapperElement) {
+                const buttonWrapper = document.createElement('div');
+                buttonWrapper.classList.add('button-wrapper');
+                buttonWrapper.appendChild(LoggerButton);
+                wrapperElement.appendChild(buttonWrapper);
+
+                // Add empty line after the button
+                const emptyLine = document.createElement('br');
+                wrapperElement.appendChild(emptyLine);
+            }
+
+            LoggerButton.addEventListener('click', toggleLogger);
+            displaySignalCanvas();
+
+            const loggingCanvas = document.getElementById('logging-canvas');
+            if (loggingCanvas) {
+                loggingCanvas.style.display = 'block';
+            }
+        }
+
+        let isLoggerOn = false;
+
+        function coverTuneButtonsPanel(isCovered) {
+            const tuneButtonsPanel = document.getElementById('tune-buttons');
+            if (tuneButtonsPanel) {
+                if (isCovered) {
+                    tuneButtonsPanel.style.backgroundColor = 'black';
+                } else {
+                    tuneButtonsPanel.style.backgroundColor = '';
+                }
+            }
+        }
+
+        // In the toggleLogger function
+        function toggleLogger() {
+            const LoggerButton = document.getElementById('Log-on-off');
+            isLoggerOn = !isLoggerOn;
+
+            if (isLoggerOn) {
+                LoggerButton.classList.remove('bg-color-3');
+                LoggerButton.classList.add('bg-color-4');
+                coverTuneButtonsPanel(true); // Cover when logger is on
+                displaySignalOutput();
+            } else {
+                LoggerButton.classList.remove('bg-color-4');
+                LoggerButton.classList.add('bg-color-3');
+                coverTuneButtonsPanel(false); // Remove when logger is off
+                displaySignalCanvas();
+            }
+        }
 
 
+        function displaySignalCanvas() {
+            const loggingCanvas = document.getElementById('logging-canvas');
+            if (loggingCanvas) {
+                loggingCanvas.style.display = 'none';
+            }
+            const signalCanvas = document.getElementById('signal-canvas');
+            if (signalCanvas) {
+                signalCanvas.style.display = 'block';
+            }
+        }
+
+        function displaySignalOutput() {
+            const loggingCanvas = document.getElementById('logging-canvas');
+            if (loggingCanvas) {
+                loggingCanvas.style.display = 'block';
+            }
+            const signalCanvas = document.getElementById('signal-canvas');
+            if (signalCanvas) {
+                signalCanvas.style.display = 'none';
+            }
+        }
+
+        window.onload = function() {
+            initializeLoggerButton();
+        };
+
+    })();
 })();
