@@ -6,9 +6,9 @@
 ## Installation notes:
 
 1. [Download](https://github.com/Highpoint2000/webserver-logger/releases) the last repository as a zip
-2. Unpack it into the plugins folder in the root of the web server
-3. Restart the server
-4. Activate it in the settings
+2. Unpack the Logger.js and the Scanner folder with the logger-plugin.js into the web server plugins folder (..fm-dx-webserver-main\plugins) ![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/98b38e5d-e58c-4192-b69c-739b608cf118)
+4. Restart the server
+5. Activate the plugin it in the settings
 
 This plugin provides scanning functions for the FM-DX web server.
 
