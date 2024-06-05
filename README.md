@@ -28,6 +28,6 @@ If the logging plugin is activated, logging in the background is started automat
 
 ### History: 
 
-## Version 1.1
+## Version 1.0
 - Automatic background logging 
 - Download option (txt/xls format)
