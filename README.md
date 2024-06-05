@@ -1,7 +1,17 @@
 # Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
-![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/e8b108e4-b312-4d74-92a0-f1ea0c4ec99b)
 
-## Version 1.0
+![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/3b083f78-9f0a-4733-8d70-f7dd1056188b)
+
+## Version 1.1
+
+- Visible real-time logging
+- Improvements to the UI interface (Preparation of log data)
+- change the names of the download files (+date +time)
+- Additional information in the download files
+- Tabular representation in the TXT file
+- Blacklist option (Frequency skipping) *
+
+* In order for the blacklist button and option to be usable, a file /web/logger/blacklist.txt must be created. The frequencies that are not to be logged must be, for example: 89.800 89.400 100.80 ... They can be written next to or below each other with spaces.
 
 ## Installation notes:
 
@@ -12,10 +22,12 @@
 
 This plugin provides scanning functions for the FM-DX web server.
 
-### notes: 
+### Notes: 
 
 If the logging plugin is activated, logging in the background is started automatically after every website reload. By pressing the DATA LOGGER switch button, the screen switches from the signal display to the logging tool. Every frequency change saves the current record (condition: PI code must be read in) in the continually updated list. You can scroll through the logs using the scroll bar on the right. You can download the current logging list in the appropriate format using the CSV or TXT button.
 
+### History: 
 
-
-
+## Version 1.1
+- Automatic background logging 
+- Download option (txt/xls format)
