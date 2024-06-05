@@ -11,11 +11,11 @@
 
 This plugin provides scanning functions for the FM-DX web server.
 
-### Notes: 
+## Notes: 
 
 If the logging plugin is activated, logging in the background is started automatically after every website reload. By pressing the DATA LOGGER switch button, the screen switches from the signal display to the logging tool. The real-time mode logs the current data record (prerequisite: PI code must be read in) in the constantly updated list. You can scroll through the logs using the scroll bar on the right. You can download the current logging list in the appropriate format using the CSV or TXT button. Using the “Blacklist” button, a stored frequency list with exclusions can be activated and deactivated.*
 
-## Version 1.1
+### Version 1.1
 
 - Visible real-time logging
 - Improvements to the UI interface (Preparation of log data)
@@ -26,8 +26,8 @@ If the logging plugin is activated, logging in the background is started automat
 
 * In order for the blacklist button and option to be usable, a file /web/logger/blacklist.txt must be created. The frequencies that are not to be logged must be, for example: 89.800 89.400 100.80 ... They can be written next to or below each other with spaces.
 
-### History: 
+## History: 
 
-## Version 1.0
+### Version 1.0
 - Automatic background logging 
 - Download option (txt/xls format)
