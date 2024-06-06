@@ -24,6 +24,7 @@
         const metaTag = document.querySelector('meta[property="og:description"]');
         const content = metaTag ? metaTag.getAttribute('content') : null;
         const ServerDescription = content ? content.replace('Server description: ', '') : null;
+        let lastBlacklistFrequency = null;
 
         console.log('ServerName:', ServerName);
         console.log('ServerDescription:', ServerDescription);
@@ -87,7 +88,95 @@
         extractedDataContainer.id = "extracted-data-container";
         document.body.appendChild(extractedDataContainer);
 
-        let loggingDataAdded = false;
+        let isLoggerOn = false;
+
+        // Ensure parent container exists
+        let parentContainer = document.querySelector(".canvas-container.hide-phone");
+        if (!parentContainer) {
+            parentContainer = document.createElement("div");
+            parentContainer.className = "canvas-container hide-phone";
+            document.body.appendChild(parentContainer);
+        }
+
+        // Retrieve styles for further use
+        const h2Style = window.getComputedStyle(document.querySelector('h2'));
+        const borderColor = h2Style.color;
+
+        // Create the logging canvas and append it to the parent container
+        let loggingCanvas = document.createElement("div");
+        loggingCanvas.id = "logging-canvas";
+        loggingCanvas.style.height = "95%";
+        loggingCanvas.style.width = "96.5%";
+        loggingCanvas.style.marginTop = "0px";
+        loggingCanvas.style.marginRight = "20px";
+        loggingCanvas.style.marginLeft = "20px";
+        loggingCanvas.style.display = 'none';
+        loggingCanvas.style.border = "1px solid ";
+        loggingCanvas.classList.add('color-4');
+        loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
+        parentContainer.appendChild(loggingCanvas);
+
+        // Create a container for both titleDiv and dataCanvas
+        const scrollContainer = document.createElement("div");
+        scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
+        scrollContainer.style.display = "block";
+        scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
+        scrollContainer.style.width = "100%";
+        scrollContainer.style.whiteSpace = "pre-wrap";
+        loggingCanvas.appendChild(scrollContainer);
+
+        // Create and configure title div
+        const titleDiv = document.createElement("div");
+        titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+        titleDiv.style.padding = "10px";
+        titleDiv.style.display = "block"; // Allow block display to stack elements vertically
+        titleDiv.style.fontFamily = "Monospace"; // Customize font
+        titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+        titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
+        titleDiv.style.width = "max-content"; // Ensure content dictates width
+        titleDiv.style.whiteSpace = "pre-wrap";
+        scrollContainer.appendChild(titleDiv);
+
+        // Create and configure data canvas
+        let dataCanvas = document.createElement("div");
+        dataCanvas.id = "output-canvas";
+        dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
+        dataCanvas.style.color = "white";
+        dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+        dataCanvas.style.fontFamily = "Monospace";
+        dataCanvas.style.position = "relative";
+        dataCanvas.style.padding = "0";
+        dataCanvas.style.whiteSpace = "nowrap";
+        dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
+        dataCanvas.style.width = "max-content"; // Ensure content dictates width
+        scrollContainer.appendChild(dataCanvas);
+
+        // Function to set the height of the dataCanvas
+        function setCanvasHeight() {
+            const windowHeight = window.innerHeight; // Height of the browser window
+            let canvasHeight;
+
+            // Adjust the height based on different screen heights
+            if (windowHeight <= 650) {
+                canvasHeight = windowHeight * 0.075; // For screens smaller or equal to 650px
+                dataCanvas.style.marginTop = "-10px";
+            } else if (windowHeight <= 900) {
+                canvasHeight = windowHeight * 0.08; // For screens smaller or equal to 900px
+                dataCanvas.style.marginTop = "-10px";
+            } else {
+                canvasHeight = windowHeight * 0.118; // For larger screens
+                dataCanvas.style.marginTop = "0px";
+            }
+
+            // Set the height of the dataCanvas
+            dataCanvas.style.maxHeight = `${canvasHeight}px`;
+        }
+
+        // Call the function to set the initial height of the dataCanvas
+        setCanvasHeight();
+
+        // Add an event listener to adjust the height on window resize
+        window.addEventListener('resize', setCanvasHeight);
 
         // Utility function to pad strings with spaces
         function padLeftWithSpaces(str, targetLength) {
@@ -100,114 +189,80 @@
             return text + " ".repeat(spacesToAdd);
         }
 
-        // Ensure parent container exists
-        let parentContainer = document.querySelector(".canvas-container.hide-phone");
-        if (!parentContainer) {
-            parentContainer = document.createElement("div");
-            parentContainer.className = "canvas-container hide-phone";
-            document.body.appendChild(parentContainer);
+        // Utility function to truncate strings if they exceed a certain length
+        function truncateString(str, maxLength) {
+            return str.length > maxLength ? str.substring(0, maxLength) : str;
         }
 
-        // Retrieve styles for further use
-        var h2Style = window.getComputedStyle(document.querySelector('h2'));
-        var borderColor = h2Style.color;
-
-        // Create and configure logging canvas
-        let loggingCanvas = document.getElementById("logging-canvas");
-        loggingCanvas = document.createElement("div");
-        loggingCanvas.id = "logging-canvas";
-        loggingCanvas.style.height = "155px";
-        loggingCanvas.style.width = "96.5%";
-        loggingCanvas.style.marginTop = "0px";
-        loggingCanvas.style.marginRight = "20px";
-        loggingCanvas.style.marginLeft = "20px";
-        loggingCanvas.style.whiteSpace = "pre-wrap";
-        loggingCanvas.style.display = 'none';
-        loggingCanvas.style.border = "1px solid ";
-        loggingCanvas.classList.add('color-4');
-        parentContainer.appendChild(loggingCanvas);
-
-        // Create and configure title div
-        const titleDiv = document.createElement("div");
-        titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
-        titleDiv.style.padding = "10px";
-        titleDiv.style.display = "flex";
-        titleDiv.style.marginTop = "-10px";
-        titleDiv.style.alignItems = "center";
-        titleDiv.style.fontFamily = "Monospace"; // Customize font
-        loggingCanvas.appendChild(titleDiv);
-
-        // Create and configure data canvas
-        let dataCanvas = document.getElementById("output-canvas");
-        dataCanvas = document.createElement("div");
-        dataCanvas.id = "output-canvas";
-        dataCanvas.style.overflow = "auto";
-        dataCanvas.style.height = "110px";
-        dataCanvas.style.color = "white";
-        dataCanvas.style.whiteSpace = "pre-wrap";
-        dataCanvas.style.fontFamily = "Monospace";
-        dataCanvas.style.position = "relative";
-        titleDiv.style.marginTop = "-5px";
-        dataCanvas.style.left = "0px";
-        dataCanvas.style.padding = "0";
-        loggingCanvas.appendChild(dataCanvas);
-
-        // Display extracted data in the canvas
         function displayExtractedData() {
-            if (!loggingDataAdded) {
-                const loggingCanvas = document.getElementById("logging-canvas");
+            const loggingCanvas = document.getElementById("logging-canvas");
 
-                if (loggingCanvas.style.display === "block") {
-                    const downloadButtonsContainer = document.createElement("div");
+            if (loggingCanvas.style.display === "block") {
+                let downloadButtonsContainer = document.querySelector(".download-buttons-container");
+
+                if (!downloadButtonsContainer) {
+                    downloadButtonsContainer = document.createElement("div");
+                    downloadButtonsContainer.className = "download-buttons-container";
                     downloadButtonsContainer.style.display = "flex";
+                    downloadButtonsContainer.style.position = "relative";
                     downloadButtonsContainer.style.marginLeft = "76.0%";
-                    downloadButtonsContainer.style.marginTop = "-20px";
-					
+                    downloadButtonsContainer.style.marginTop = "-10px";
+
+                    const blacklistButton = setupBlacklistButton();
+                    if (blacklistButton instanceof Node) {
+                        downloadButtonsContainer.appendChild(blacklistButton);
+                    }
+
                     const DownloadButtonTXT = createDownloadButtonTXT();
-                    downloadButtonsContainer.appendChild(DownloadButtonTXT);
+                    if (DownloadButtonTXT instanceof Node) {
+                        downloadButtonsContainer.appendChild(DownloadButtonTXT);
+                    }
 
                     const DownloadButtonCSV = createDownloadButtonCSV();
-                    downloadButtonsContainer.appendChild(DownloadButtonCSV);
-
-                    loggingCanvas.appendChild(downloadButtonsContainer);
-                    loggingDataAdded = true;
-                } else {
-                    // Remove download buttons if canvas is not visible
-                    const downloadButtonsContainer = document.querySelector(".download-buttons-container");
-                    if (downloadButtonsContainer) {
-                        downloadButtonsContainer.remove();
+                    if (DownloadButtonCSV instanceof Node) {
+                        downloadButtonsContainer.appendChild(DownloadButtonCSV);
                     }
-                    loggingDataAdded = false;
+
+                    if (parentContainer instanceof Node) {
+                        parentContainer.appendChild(downloadButtonsContainer);
+                    }
                 }
+                loggingDataAdded = true;
+            } else {
+                const downloadButtonsContainer = document.querySelector(".download-buttons-container");
+                if (downloadButtonsContainer && downloadButtonsContainer instanceof Node) {
+                    downloadButtonsContainer.remove();
+                }
+                loggingDataAdded = false;
             }
 
-            // Format date and time
             const now = new Date();
             const date = formatDate(now);
             const time = formatTime(now);
             let currentFrequencyWithSpaces = padLeftWithSpaces(currentFrequency, 7);
 
-            // Retrieve and format data
             const data = previousDataByFrequency[currentFrequency];
             if (data && data.picode.length > 1) {
-                const station = padRightWithSpaces(data.station, 25);
-                const city = padRightWithSpaces(data.city, 20);
-                const itu = padLeftWithSpaces(data.itu, 4);
-                const pol = data.pol;
-                const erpTxt = String(data.erp);
-                const erpLeftWithSpaces = padLeftWithSpaces(erpTxt, 6);
-                const distance = padLeftWithSpaces(data.distance, 4);
-                const azimuth = padLeftWithSpaces(data.azimuth, 3);
+                const station = truncateString(padRightWithSpaces(data.station, 25), 25);
+                const city = truncateString(padRightWithSpaces(data.city, 21), 21);
+                const itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
+                const pol = truncateString(data.pol, 1);
+                const erpTxt = truncateString(padLeftWithSpaces(String(data.erp), 6), 6);
+                const distance = truncateString(padLeftWithSpaces(data.distance, 4), 4);
+                const azimuth = truncateString(padLeftWithSpaces(data.azimuth, 3), 3);
 
-                const picode = padRightWithSpaces(data.picode, 7);
-                let ps = data.ps.replace(/ /g, "_");
-                let psRightWithSpaces = padRightWithSpaces(ps, 9);
-                const outputText = pol ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${psRightWithSpaces}  ${station}  ${city}  ${itu}  ${pol}  ${erpLeftWithSpaces}  ${distance}  ${azimuth}` : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${psRightWithSpaces}`;
-                const outputArray = pol ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${psRightWithSpaces} | ${station} | ${city} | ${itu} | ${pol} | ${erpLeftWithSpaces} | ${distance} | ${azimuth}` : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${psRightWithSpaces} |                           |                      |      |   |        |      | `;
+                const picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
+                let ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
 
-                // Check if frequency is not in the blacklist
-                if (blacklist.length === 0 || !blacklist.includes(currentFrequency)) {
-                    // Add a new line if the frequency changes
+                const outputText = pol ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}` : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
+                const outputArray = pol ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth}` : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      | `;
+
+                // Check if currentFrequency is in the blacklist
+                function isInBlacklist(currentFrequency, blacklist) {
+                    return blacklist.some(entry => entry.split(' ').includes(currentFrequency));
+                }
+
+                if (blacklist.length === 0 || !isInBlacklist(currentFrequency, blacklist)) {
                     if (currentFrequency !== previousFrequency) {
                         const newOutputDiv = document.createElement("div");
                         newOutputDiv.textContent = outputText;
@@ -215,24 +270,63 @@
                         newOutputDiv.style.fontSize = "16px";
                         newOutputDiv.style.marginBottom = "-1px";
                         newOutputDiv.style.padding = "0 10px";
-                        dataCanvas.appendChild(newOutputDiv);
 
-                        logDataArray.push(outputArray); // Add to logDataArray
+                        if (dataCanvas instanceof Node) {
+                            dataCanvas.appendChild(newOutputDiv);
+                        }
 
-                        // Scroll to the bottom to show latest entries
+                        logDataArray.push(outputArray);
                         dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
                     } else {
-                        // Update the last line if the frequency remains the same
                         if (dataCanvas && dataCanvas.lastChild) {
                             const lastOutputDiv = dataCanvas.lastChild;
                             lastOutputDiv.textContent = outputText;
-
-                            // Update the corresponding entry in logDataArray
                             logDataArray[logDataArray.length - 1] = outputArray;
                         }
                     }
                 } else {
-                    console.log(`Frequency ${currentFrequency} is in the blacklist.`);
+                    if (currentFrequency !== lastBlacklistFrequency) {
+                        console.log(`Frequency ${currentFrequency} is in the blacklist.`);
+                        lastBlacklistFrequency = currentFrequency;
+                    }
+                }
+            }
+        }
+
+        function coverTuneButtonsPanel(isCovered) {
+            const tuneButtonsPanel = document.getElementById('tune-buttons');
+            if (tuneButtonsPanel) {
+                tuneButtonsPanel.style.backgroundColor = isCovered ? 'black' : '';
+            }
+        }
+
+        // Toggle logger state and update UI accordingly
+        function toggleLogger() {
+            const LoggerButton = document.getElementById('Log-on-off');
+            const downloadButtonsContainer = document.querySelector('.download-buttons-container');
+            isLoggerOn = !isLoggerOn;
+
+            if (isLoggerOn) {
+                LoggerButton.classList.remove('bg-color-2');
+                LoggerButton.classList.add('bg-color-4');
+                coverTuneButtonsPanel(true); // Cover when logger is on
+                displaySignalOutput();
+
+                // Show the download buttons
+                if (downloadButtonsContainer) {
+                    downloadButtonsContainer.style.display = 'flex';
+                } else {
+                    createDownloadButtons(); // Function to create download buttons if not already created
+                }
+            } else {
+                LoggerButton.classList.remove('bg-color-4');
+                LoggerButton.classList.add('bg-color-2');
+                coverTuneButtonsPanel(false); // Remove when logger is off
+                displaySignalCanvas();
+
+                // Hide the download buttons
+                if (downloadButtonsContainer) {
+                    downloadButtonsContainer.style.display = 'none';
                 }
             }
         }
@@ -272,58 +366,27 @@
             return DownloadButtonCSV;
         }
 
-        // Download data as TXT
-        function downloadDataTXT() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.txt`;
-            let allData = `${ServerName}\n${ServerDescription}\nRDS-LOGGER ${currentDate} ${currentTime}\n\n` +
-                `DATE       | TIME      | FREQ   | PI      | PS        | NAME                      | CITY                 |  ITU | P |    ERP | DIST |  AZ\n` +
-                `------------------------------------------------------------------------------------------------------------------------------------------\n`;
-
-            logDataArray.forEach(line => {
-                allData += line + '\n';
-            });
-
-            const blob = new Blob([allData], { type: "text/plain" });
-
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                const link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
+        // Display signal canvas
+        function displaySignalCanvas() {
+            const loggingCanvas = document.getElementById('logging-canvas');
+            if (loggingCanvas) {
+                loggingCanvas.style.display = 'none';
+            }
+            const signalCanvas = document.getElementById('signal-canvas');
+            if (signalCanvas) {
+                signalCanvas.style.display = 'block';
             }
         }
 
-        // Download data as CSV
-        function downloadDataCSV() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
-            let allData = `${ServerName}\n${ServerDescription}\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az\n`;
-
-            logDataArray.forEach(line => {
-                const modifiedLine = line.replaceAll(/\s*\|\s*/g, ";");
-                allData += modifiedLine + '\n';
-            });
-
-            const blob = new Blob([allData], { type: "text/plain" });
-
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                const link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
+        // Display signal output
+        function displaySignalOutput() {
+            const loggingCanvas = document.getElementById('logging-canvas');
+            if (loggingCanvas) {
+                loggingCanvas.style.display = 'block';
+            }
+            const signalCanvas = document.getElementById('signal-canvas');
+            if (signalCanvas) {
+                signalCanvas.style.display = 'none';
             }
         }
 
@@ -374,37 +437,40 @@
 
         // Setup blacklist button and state
         function setupBlacklistButton() {
-            const loggingCanvas = document.getElementById("logging-canvas");
             let blacklistButton = document.getElementById("blacklist-button");
             const blacklistState = getBlacklistStateFromCookie();
 
             if (!blacklistButton) {
                 blacklistButton = document.createElement("button");
                 blacklistButton.id = "blacklist-button";
-                blacklistButton.style.position = "relative";
                 blacklistButton.style.width = "100px";
                 blacklistButton.style.height = "20px";
-                blacklistButton.style.marginLeft = "62%";
-                blacklistButton.style.marginTop = "9px";
+                blacklistButton.style.marginLeft = "-145px";
+                blacklistButton.style.marginRight = "10px";
+                blacklistButton.style.marginTop = "0px";
                 blacklistButton.style.display = "flex";
                 blacklistButton.style.alignItems = "center";
                 blacklistButton.style.justifyContent = "center";
                 blacklistButton.style.borderRadius = '0px 0px 0px 0px';
                 blacklistButton.style.fontWeight = "bold";
-                loggingCanvas.appendChild(blacklistButton);
-
                 blacklistButton.addEventListener("click", () => {
                     const newState = !getBlacklistStateFromCookie().state;
                     setBlacklistStateInCookie({ state: newState });
                     updateBlacklistState(newState);
                 });
+
+                updateBlacklistButton(blacklistButton, blacklistState.state);
             }
 
-            updateBlacklistButton(blacklistButton, blacklistState.state);
+            return blacklistButton;
         }
 
         // Update blacklist button appearance based on state
         function updateBlacklistButton(button, state) {
+            if (!button) {
+                console.error('Blacklist button does not exist.');
+                return;
+            }
             if (!state) {
                 button.textContent = "Blacklist OFF";
                 button.classList.remove('bg-color-4');
@@ -466,7 +532,7 @@
         // Initial check of blacklist state
         function checkBlacklist() {
             const blacklistState = getBlacklistStateFromCookie().state;
-            updateBlacklistState(blacklistState);  // Ensure blacklist state is correctly set on page load
+            updateBlacklistState(blacklistState); // Ensure blacklist state is correctly set on page load
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -505,57 +571,11 @@
 
             LoggerButton.addEventListener('click', toggleLogger);
             displaySignalCanvas();
-        }
 
-        let isLoggerOn = false;
-
-        // Cover tune buttons panel based on logger state
-        function coverTuneButtonsPanel(isCovered) {
-            const tuneButtonsPanel = document.getElementById('tune-buttons');
-            if (tuneButtonsPanel) {
-                tuneButtonsPanel.style.backgroundColor = isCovered ? 'black' : '';
-            }
-        }
-
-        // Toggle logger state and update UI accordingly
-        function toggleLogger() {
-            const LoggerButton = document.getElementById('Log-on-off');
-            isLoggerOn = !isLoggerOn;
-
-            if (isLoggerOn) {
-                LoggerButton.classList.remove('bg-color-2');
-                LoggerButton.classList.add('bg-color-4');
-                coverTuneButtonsPanel(true); // Cover when logger is on
-                displaySignalOutput();
-            } else {
-                LoggerButton.classList.remove('bg-color-4');
-                LoggerButton.classList.add('bg-color-2');
-                coverTuneButtonsPanel(false); // Remove when logger is off
-                displaySignalCanvas();
-            }
-        }
-
-        // Display signal canvas
-        function displaySignalCanvas() {
-            const loggingCanvas = document.getElementById('logging-canvas');
-            if (loggingCanvas) {
-                loggingCanvas.style.display = 'none';
-            }
-            const signalCanvas = document.getElementById('signal-canvas');
-            if (signalCanvas) {
-                signalCanvas.style.display = 'block';
-            }
-        }
-
-        // Display signal output
-        function displaySignalOutput() {
-            const loggingCanvas = document.getElementById('logging-canvas');
-            if (loggingCanvas) {
-                loggingCanvas.style.display = 'block';
-            }
-            const signalCanvas = document.getElementById('signal-canvas');
-            if (signalCanvas) {
-                signalCanvas.style.display = 'none';
+            // Ensure download buttons are initially hidden
+            const downloadButtonsContainer = document.querySelector('.download-buttons-container');
+            if (downloadButtonsContainer) {
+                downloadButtonsContainer.style.display = 'none';
             }
         }
 
@@ -565,5 +585,61 @@
             checkBlacklist();
         };
 
+        // Download data as TXT
+        function downloadDataTXT() {
+            const now = new Date();
+            const currentDate = formatDate(now);
+            const currentTime = formatTime(now);
+
+            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.txt`;
+            let allData = `${ServerName}\n${ServerDescription}\nRDS-LOGGER ${currentDate} ${currentTime}\n\n` +
+                `DATE       | TIME      | FREQ   | PI      | PS        | NAME                      | CITY                  | ITU | P |    ERP | DIST |  AZ\n` +
+                `------------------------------------------------------------------------------------------------------------------------------------------\n`;
+
+            logDataArray.forEach(line => {
+                allData += line + '\n';
+            });
+
+            const blob = new Blob([allData], { type: "text/plain" });
+
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+            } else {
+                const link = document.createElement("a");
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                window.URL.revokeObjectURL(link.href);
+            }
+        }
+
+        // Download data as CSV
+        function downloadDataCSV() {
+            const now = new Date();
+            const currentDate = formatDate(now);
+            const currentTime = formatTime(now);
+
+            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+            let allData = `${ServerName}\n${ServerDescription}\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az\n`;
+
+            logDataArray.forEach(line => {
+                const modifiedLine = line.replaceAll(/\s*\|\s*/g, ";");
+                allData += modifiedLine + '\n';
+            });
+
+            const blob = new Blob([allData], { type: "text/plain" });
+
+            if (window.navigator.msSaveOrOpenBlob) {
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+            } else {
+                const link = document.createElement("a");
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                window.URL.revokeObjectURL(link.href);
+            }
+        }
+
     })();
 })();
+
