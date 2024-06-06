@@ -3,7 +3,7 @@ var pluginConfig = {
     name: 'RDS Logger Plugin',
     version: '1.1',
     author: 'Highpoint',
-    frontEndPath: 'Logger/logger-plugin.js'
+    frontEndPath: 'Logger/rds-logger-plugin.js'
 }
 
 // Backend (server) changes can go here...
