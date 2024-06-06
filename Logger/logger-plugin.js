@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                ///
-///  RDS LOGGER FOR FM-DX-WEBSERVER (V1.1)                                         ///
+///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.1)                                      ///
 ///                                                                                ///
 ///  by Highpoint                                                                  ///
 ///                                                                                ///
@@ -194,47 +194,38 @@
             return str.length > maxLength ? str.substring(0, maxLength) : str;
         }
 
-        function displayExtractedData() {
-            const loggingCanvas = document.getElementById("logging-canvas");
+        let downloadButtonsContainer = document.querySelector(".download-buttons-container");
 
-            if (loggingCanvas.style.display === "block") {
-                let downloadButtonsContainer = document.querySelector(".download-buttons-container");
+        if (!downloadButtonsContainer) {
+            downloadButtonsContainer = document.createElement("div");
+            downloadButtonsContainer.className = "download-buttons-container";
+            downloadButtonsContainer.style.display = "none";
+            downloadButtonsContainer.style.position = "relative";
+            downloadButtonsContainer.style.marginLeft = "76.0%";
+            downloadButtonsContainer.style.marginTop = "-10px";
 
-                if (!downloadButtonsContainer) {
-                    downloadButtonsContainer = document.createElement("div");
-                    downloadButtonsContainer.className = "download-buttons-container";
-                    downloadButtonsContainer.style.display = "flex";
-                    downloadButtonsContainer.style.position = "relative";
-                    downloadButtonsContainer.style.marginLeft = "76.0%";
-                    downloadButtonsContainer.style.marginTop = "-10px";
-
-                    const blacklistButton = setupBlacklistButton();
-                    if (blacklistButton instanceof Node) {
-                        downloadButtonsContainer.appendChild(blacklistButton);
-                    }
-
-                    const DownloadButtonTXT = createDownloadButtonTXT();
-                    if (DownloadButtonTXT instanceof Node) {
-                        downloadButtonsContainer.appendChild(DownloadButtonTXT);
-                    }
-
-                    const DownloadButtonCSV = createDownloadButtonCSV();
-                    if (DownloadButtonCSV instanceof Node) {
-                        downloadButtonsContainer.appendChild(DownloadButtonCSV);
-                    }
-
-                    if (parentContainer instanceof Node) {
-                        parentContainer.appendChild(downloadButtonsContainer);
-                    }
-                }
-                loggingDataAdded = true;
-            } else {
-                const downloadButtonsContainer = document.querySelector(".download-buttons-container");
-                if (downloadButtonsContainer && downloadButtonsContainer instanceof Node) {
-                    downloadButtonsContainer.remove();
-                }
-                loggingDataAdded = false;
+            const blacklistButton = setupBlacklistButton();
+            if (blacklistButton instanceof Node) {
+				downloadButtonsContainer.appendChild(blacklistButton);
             }
+
+            const DownloadButtonTXT = createDownloadButtonTXT();
+            if (DownloadButtonTXT instanceof Node) {
+                downloadButtonsContainer.appendChild(DownloadButtonTXT);
+            }
+
+            const DownloadButtonCSV = createDownloadButtonCSV();
+            if (DownloadButtonCSV instanceof Node) {
+                downloadButtonsContainer.appendChild(DownloadButtonCSV);
+            }
+
+            if (parentContainer instanceof Node) {
+                parentContainer.appendChild(downloadButtonsContainer);
+            }
+					
+        }
+
+        function displayExtractedData() {
 
             const now = new Date();
             const date = formatDate(now);
@@ -544,6 +535,8 @@
         function initializeLoggerButton() {
             setupWebSocket();
 
+           // Ensure download buttons are initially hidden
+
             const LoggerButton = document.createElement('button');
             LoggerButton.classList.add('hide-phone');
             LoggerButton.id = 'Log-on-off';
@@ -572,11 +565,7 @@
             LoggerButton.addEventListener('click', toggleLogger);
             displaySignalCanvas();
 
-            // Ensure download buttons are initially hidden
-            const downloadButtonsContainer = document.querySelector('.download-buttons-container');
-            if (downloadButtonsContainer) {
-                downloadButtonsContainer.style.display = 'none';
-            }
+ 
         }
 
         // Initialize on window load
