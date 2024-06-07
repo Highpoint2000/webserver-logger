@@ -228,13 +228,13 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
             downloadButtonsContainer.style.display = "none";
             downloadButtonsContainer.style.position = "relative";
             downloadButtonsContainer.style.marginLeft = "76.0%";
-            downloadButtonsContainer.style.marginTop = "-10px";
+            downloadButtonsContainer.style.marginTop = "-1px";
 
             const FMLISTButton = createFMLISTButton();
             if (FMLISTButton instanceof Node) {
                 downloadButtonsContainer.appendChild(FMLISTButton);
             }
-
+			
             const FMDXPLButton = createFMDXPLButton();
             if (FMDXPLButton instanceof Node) {
                 downloadButtonsContainer.appendChild(FMDXPLButton);
@@ -268,10 +268,51 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
         let idAll = '';
         let id = '';
         let loopCounter = 0; // Initialize counter
+		
+        // Variable to track the window state
+        let FMDXPLALLWindow = null;
+        let isOpenFMDXPLALL = false;
+
+        // Function to create the FMDXPLALL button and link it to the overlay
+        function createFMDXPLALLButton() {
+            // Create the button
+            const FMDXPLALLButton = document.createElement("button");
+            FMDXPLALLButton.textContent = "FMDXPLALL";
+            FMDXPLALLButton.style.width = "80px";
+            FMDXPLALLButton.style.height = "20px";
+            FMDXPLALLButton.style.marginRight = "-145%";
+            FMDXPLALLButton.style.marginLeft = "-50px";
+            FMDXPLALLButton.style.display = "flex";
+            FMDXPLALLButton.style.alignItems = "center";
+            FMDXPLALLButton.style.justifyContent = "center";
+            FMDXPLALLButton.style.borderRadius = '0px';
+
+            // Event listener for button click
+            FMDXPLALLButton.addEventListener("click", function () {
+                if (id) {
+                    // Check if the popup window is already open
+                    if (isOpenFMDXPLALL && FMDXPLALLWindow && !FMDXPLALLWindow.closed) {
+                        // Close if already open
+                        FMDXPLALLWindow.close();
+                        isOpenFMDXPLALL = false;
+                    } else {
+                        // Open if not already open
+                        openFMDXPLALLPage();
+                        isOpenFMDXPLALL = true;
+                    }
+                } else {
+                    alert("Station not yet fully identified!");
+                }
+            });
+
+            return FMDXPLALLButton;
+        }
+
+
 
         // Variable to track the window state
         let fmdxplWindow = null;
-        let isOpen = false;
+        let isOpenfmdxpl = false;
 
         // Function to create the FMDXPL button and link it to the overlay
         function createFMDXPLButton() {
@@ -291,14 +332,14 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
             FMDXPLButton.addEventListener("click", function () {
                 if (id) {
                     // Check if the popup window is already open
-                    if (isOpen && fmdxplWindow && !fmdxplWindow.closed) {
+                    if (isOpenfmdxpl && fmdxplWindow && !fmdxplWindow.closed) {
                         // Close if already open
                         fmdxplWindow.close();
-                        isOpen = false;
+                        isOpenfmdxpl = false;
                     } else {
                         // Open if not already open
                         openFMDXPLPage();
-                        isOpen = true;
+                        isOpenfmdxpl = true;
                     }
                 } else {
                     alert("Station not yet fully identified!");
@@ -839,11 +880,11 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
             let allData;
             if (OperatingSystem == 'linux') {
                 allData = `${ServerName}\n${ServerDescription}\nRDS-LOGGER ${currentDate} ${currentTime}\n\n` +
-                    `DATE       | TIME       | FREQ  | PI      | PS        | NAME                    | CITY                | ITU | P |    ERP | DIST |  AZ | ID\n` +
+                    `DATE       | TIME     |   FREQ  | PI      | PS        | NAME                    | CITY                | ITU | P |    ERP | DIST |  AZ | ID\n` +
                     `-----------------------------------------------------------------------------------------------------------------------------------------------\n`;
             } else {
                 allData = `${ServerName}\n${ServerDescription}\nRDS-LOGGER ${currentDate} ${currentTime}\n\n` +
-                    `DATE       | TIME       | FREQ  | PI      | PS        | NAME                      | CITY                  | ITU | P |    ERP | DIST |  AZ | ID\n` +
+                    `DATE       | TIME     |   FREQ  | PI      | PS        | NAME                      | CITY                  | ITU | P |    ERP | DIST |  AZ | ID\n` +
                     `---------------------------------------------------------------------------------------------------------------------------------------------------\n`;
             }
 
@@ -894,43 +935,44 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
         // Cache for API responses
         const apiCache = {};
 
-        // Function to download data as HTML
-        async function downloadDataHTML() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
+		// Function to download data as HTML
+		async function downloadDataHTML() {
+			const now = new Date();
+			const currentDate = formatDate(now);
+			const currentTime = formatTime(now);
+			const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
 
-            let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription}<br>RDS-LOGGER ${currentDate} ${currentTime}<br><br>` +
-                `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDXPL</th><th>FMLIST</th></tr>`;
+			let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription}<br>RDS-LOGGER ${currentDate} ${currentTime}<br><br>` +
+				`<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDXPL</th><th>FMLIST</th></tr>`;
 
-            for (let line of logDataArray) {
-                let formattedLine = line.replace(/\s*\|\s*/g, "</td><td>");
-                let [date, time, currentFrequency, picode, ps, station, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(item => item.trim());
-                let lat = LAT;
-                let lon = LON;
+			for (let line of logDataArray) {
+				let formattedLine = line.replace(/\s*\|\s*/g, "</td><td>");
+				let [date, time, currentFrequency, picode, ps, station, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(item => item.trim());
+				let lat = LAT;
+				let lon = LON;
 
-                let link1 = picode ? `https://maps.fmdx.pl/#qth=${lat},${lon}&freq=${currentFrequency}&findPi=${picode}&itu=${itu}` : '';
-                let link2 = id ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=distance&qtf=azimuth&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">LINK</a>` : '';
+				let link1 = picode ? `https://maps.fmdx.pl/#qth=${lat},${lon}&freq=${currentFrequency}&findPi=${picode}&itu=${itu}` : '';
+				let link2 = id && FMLIST_OM_ID ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=distance&qtf=azimuth&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
-                allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
-            }
+		allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+			}
 
-            let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
-            allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDXPL ALL</a></pre></body></html>`;
+			let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
+			allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDXPL ALL</a></pre></body></html>`;
 
-            const blob = new Blob([allData], { type: "text/html" });
+			const blob = new Blob([allData], { type: "text/html" });
 
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                const link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
-            }
-        }
+			if (window.navigator.msSaveOrOpenBlob) {
+				window.navigator.msSaveOrOpenBlob(blob, filename);
+			} else {
+				const link = document.createElement("a");
+				link.href = window.URL.createObjectURL(blob);
+				link.download = filename;
+				link.click();
+				window.URL.revokeObjectURL(link.href);
+			}
+		}
+
 
         // Get ID value from API
         async function getidValue(currentFrequency, picode, itu) {
