@@ -1,10 +1,10 @@
 //////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                ///
-///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2)                                      ///
+///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2a)                                     ///
 ///                                                                                ///
 ///  by Highpoint                                                                  ///
 ///                                                                                ///
-///                                                         last update: 07.06.24  ///
+///                                                         last update: 08.06.24  ///
 //////////////////////////////////////////////////////////////////////////////////////
 
 const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
@@ -18,8 +18,8 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
         let OperatingSystem = "other";
         const userAgent = navigator.userAgent.toLowerCase();
 
-        if (userAgent.includes("linux") || userAgent.includes("apple")) {
-            OperatingSystem = "linux";
+        if (userAgent.includes("Windows") || userAgent.includes("window")) {
+            OperatingSystem = "windows";
         }
 
         console.log('Operating System:', OperatingSystem);
@@ -497,9 +497,10 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
                     if (pol !== '' && loopCounter === 0) {
                         let picodeWithout = picode.replace(/\?/g, '').replace(/\s/g, '');
                         let ituWithout = itu.replace(/\s/g, '');
+						let cityWithout = city.replace(/\s/g, '');
                         loopCounter++; // Increment counter after loop
                         if (loopCounter === 1) {
-                            id = await getidValue(currentFrequency, picodeWithout, ituWithout);
+                            id = await getidValue(currentFrequency, picodeWithout, ituWithout, cityWithout);
                             if (id) {
                                 idAll += idAll ? `,${id}` : id;
                             }
@@ -975,14 +976,14 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
 
 
         // Get ID value from API
-        async function getidValue(currentFrequency, picode, itu) {
+        async function getidValue(currentFrequency, picode, itu, city) {
             try {
                 const modifiedFreq = currentFrequency.slice(0, -2);
                 const cacheKey = `${modifiedFreq}_${itu}`;
 
                 if (apiCache[cacheKey]) {
                     console.log('Using cache for', cacheKey);
-                    return findidInData(apiCache[cacheKey], currentFrequency, picode, itu);
+                    return findidInData(apiCache[cacheKey], currentFrequency, picode, itu, city);
                 }
 
                 const apiUrl = `https://maps.fmdx.pl/api/?freq=${modifiedFreq}&itu=${itu}`;
@@ -999,7 +1000,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
 
                 const data = await response.json();
                 apiCache[cacheKey] = data; // Cache the API response
-                return findidInData(data, currentFrequency, picode, itu);
+                return findidInData(data, currentFrequency, picode, itu, city);
             } catch (error) {
                 console.error('Error fetching data:', error);
                 return null;
@@ -1007,14 +1008,15 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
         }
 
         // Find ID in data
-        function findidInData(data, currentFrequency, picode, itu) {
+        function findidInData(data, currentFrequency, picode, itu, city) {
+			//console.log(currentFrequency, picode, itu, city);
             if (data && data.locations) {
                 for (let key in data.locations) {
                     const entry = data.locations[key];
-                    if (entry.itu === itu && Array.isArray(entry.stations)) {
+                    if (entry.name === city && entry.itu === itu && Array.isArray(entry.stations)) {
                         for (let station of entry.stations) {
                             if (station.freq === parseFloat(currentFrequency) && station.pi === picode) {
-                                console.log(currentFrequency, picode, itu, 'ID found:', station.id);
+                                console.log(currentFrequency, picode, itu, city, 'ID found:', station.id);
                                 return station.id; // Return the ID of the matching station
                             }
                         }
