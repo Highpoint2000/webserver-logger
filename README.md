@@ -18,13 +18,17 @@ If the logging plugin is activated, logging in the background is started automat
 
 (*) In order for the blacklist button and option to be usable, a file /web/logger/blacklist.txt must be created. The frequencies that are not to be logged must be, for example: 89.800 89.400 100.80 ... They can be written next to or below each other with spaces.
 
+### Version 1.2a
+
+- Fixed location search bug
+
+## History: 
+
 ### Version 1.2
 
 - Logbook option for fmlist.org
 - Display of the transmission location of individual and all stations on maps.fmdx.pl
 - Download the log list in html format with links to maps.fmdx.pl and fmlist.org
-
-## History: 
 
 ### Version 1.1
 
