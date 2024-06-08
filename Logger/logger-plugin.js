@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                ///
-///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2a)                                     ///
+///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2b)                                     ///
 ///                                                                                ///
 ///  by Highpoint                                                                  ///
 ///                                                                                ///
@@ -941,6 +941,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
 			const currentDate = formatDate(now);
 			const currentTime = formatTime(now);
 			const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
+			let id='';
 
 			let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription}<br>RDS-LOGGER ${currentDate} ${currentTime}<br><br>` +
 				`<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDXPL</th><th>FMLIST</th></tr>`;
@@ -950,11 +951,19 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
 				let [date, time, currentFrequency, picode, ps, station, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(item => item.trim());
 				let lat = LAT;
 				let lon = LON;
+				
+				if (id !== '') {
+					let link1 = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*`;
+					let link2 = '';
+					if (FMLIST_OM_ID !== '') {
+						link2 = `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>`;
+					}
+    				allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+				} else {
+					allData += `<tr><td>${formattedLine}</td><td></td><td></td></tr>\n`;
+				}
 
-				let link1 = id ? `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*` : '';
-				let link2 = id && FMLIST_OM_ID ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=distance&qtf=azimuth&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
-
-		allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+		
 			}
 
 			let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
