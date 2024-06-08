@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                ///
-///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2a)                                     ///
+///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2b)                                     ///
 ///                                                                                ///
 ///  by Highpoint                                                                  ///
 ///                                                                                ///
@@ -485,6 +485,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
                         logDataArray.push(outputArray);
                         dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
                         loopCounter = 0; // Reset counter after processing a new frequency
+						id ='';
                     } else {
                         if (dataCanvas && dataCanvas.lastChild) {
                             const lastOutputDiv = dataCanvas.lastChild;
@@ -952,7 +953,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
 				let lat = LAT;
 				let lon = LON;
 
-				let link1 = picode ? `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*` : '';
+				let link1 = id ? `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*` : '';
 				let link2 = id && FMLIST_OM_ID ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=distance&qtf=azimuth&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
 		allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
