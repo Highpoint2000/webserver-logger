@@ -15,7 +15,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
     const loggerPlugin = (() => {
 
         // User agent detection for the operating system
-        let OperatingSystem = "other";
+        let OperatingSystem = "linux";
         const userAgent = navigator.userAgent.toLowerCase();
 
         if (userAgent.includes("Windows") || userAgent.includes("window")) {
