@@ -952,7 +952,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
 				let lat = LAT;
 				let lon = LON;
 
-				let link1 = picode ? `https://maps.fmdx.pl/#qth=${lat},${lon}&freq=${currentFrequency}&findPi=${picode}&itu=${itu}` : '';
+				let link1 = picode ? `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*` : '';
 				let link2 = id && FMLIST_OM_ID ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=distance&qtf=azimuth&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
 		allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
