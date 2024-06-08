@@ -18,7 +18,7 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
         let OperatingSystem = "linux";
         const userAgent = navigator.userAgent.toLowerCase();
 
-        if (userAgent.includes("Windows") || userAgent.includes("window")) {
+        if (userAgent.includes("Windows") || userAgent.includes("windows")) {
             OperatingSystem = "windows";
         }
 
