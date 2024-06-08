@@ -1,6 +1,6 @@
 //////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                ///
-///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2b)                                     ///
+///  LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.2a)                                     ///
 ///                                                                                ///
 ///  by Highpoint                                                                  ///
 ///                                                                                ///
