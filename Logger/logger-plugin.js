@@ -496,12 +496,10 @@ const FMLIST_OM_ID = ''; //To be able to use the logbook function - please enter
                     }
 
                     if (pol !== '' && loopCounter === 0) {
-                        let picodeWithout = picode.replace(/\?/g, '').replace(/\s/g, '');
-                        let ituWithout = itu.replace(/\s/g, '');
-						let cityWithout = city.replace(/\s/g, '');
+                        let picodeWithout = data.picode.replace(/\?/g, '');
                         loopCounter++; // Increment counter after loop
                         if (loopCounter === 1) {
-                            id = await getidValue(currentFrequency, picodeWithout, ituWithout, cityWithout);
+                            id = await getidValue(currentFrequency, picodeWithout, data.itu, data.city);
                             if (id) {
                                 idAll += idAll ? `,${id}` : id;
                             }
