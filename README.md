@@ -23,7 +23,7 @@ If the logging plugin is activated, logging in the background will automatically
 
 ### Version 1.3
 
-- Added filter function for logging and downloading
+- Added filter function for logging and downloading (see description above!)
 - fixed the overwrite bug when pressing up down frequently
 - remove the txt download
 
