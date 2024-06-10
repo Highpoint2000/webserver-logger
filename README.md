@@ -1,6 +1,7 @@
 # Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/bde52c35-3cf5-42f5-963d-bfe4ecd739f4)
+![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/9f2481cf-5072-4bce-9908-261f022e67b9)
+
 
 
 
