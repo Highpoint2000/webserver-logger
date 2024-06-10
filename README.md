@@ -1,6 +1,7 @@
 # Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/0653bcda-3464-404d-a3f7-216e1a8c50c9)
+![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/bde52c35-3cf5-42f5-963d-bfe4ecd739f4)
+
 
 
 
@@ -15,15 +16,21 @@ This plugin provides scanning functions for the FM-DX web server.
 
 ## Notes: 
 
-If the logging plugin is activated, logging in the background is started automatically after every website reload. By pressing the DATA LOGGER switch button, the screen switches from the signal display to the logging tool. The real-time mode logs the current data record (prerequisite: PI code must be read in) in the constantly updated list. You can scroll through the logs using the scroll bar on the right. You can download the current logging list in the appropriate format using the CSV or TXT button. Using the “Blacklist” button, a stored frequency list with exclusions can be activated and deactivated.* If you have an account at fmlist.org you can transfer the logs directly to the logbook. To do this, you must enter your OM ID once in the logger-plugin.js logger and log in with your access data at https://fmlist.org before accessing the web server. Only then will the link work!
+If the logging plugin is activated, logging in the background will automatically start after every website reload. Pressing the DATA LOGGER toggle button switches the screen from the signal display to the logging tool. The real-time mode logs the current data set (prerequisite: PI code must be read in) in a constantly updated list. You can scroll through the logs using the scroll bar on the right. You can download the current logging list in the appropriate format using the CSV or HTML button. A stored list of frequency exclusions can be activated and deactivated using the “Blacklist” button.* The FILTER button either only records identified logs (i.e. with TX information) or sorts the standard log list by frequency and filters out excess entries Filter is activated before downloading the log lists.  You can use the FMDX button to display the current transmission location graphically on a map. If you have an account at fmlist.org, you can either use the FMLIST button to transfer the current log or later transfer the logs from the logs to your FMLIST logbook. To do this, you must enter your OM ID once in the logger logger-plugin.js before accessing the web server and log in with your access data at https://fmlist.org. Only then will the link work! If the horizontal scroll bar appears undesirably, please increase the screen limit variable from 1180 to 1185 in the script.
 
-(*) In order for the blacklist button and option to be usable, a file /web/logger/blacklist.txt must be created. The frequencies that are not to be logged must be, for example: 89.800 89.400 100.80 ... They can be written next to or below each other with spaces.
+(*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
+
+### Version 1.3
+
+- Added filter function for logging and downloading
+- fixed the overwrite bug when pressing up down frequently
+- remove the txt download
+
+## History: 
 
 ### Version 1.2b
 
 - Fixed the datatransfer bug for FMLIST from the html File
-
-## History: 
 
 ### Version 1.2a
 
