@@ -1,11 +1,12 @@
-//////////////////////////////////////////////////////////////////////////////////////
-///                                                                                ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3)                                  ///
-///                                                                                ///
-///  by Highpoint                                                                  ///
-///                                                                                ///
-///                                                         last update: 11.06.24  ///
-//////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
+///                                                      ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3a)       ///
+///                                                      ///
+///  by Highpoint                last update: 11.06.24   ///
+///                                                      ///
+///  https://github.com/Highpoint2000/webserver-logger   /// 
+///                                                      ///                         
+////////////////////////////////////////////////////////////
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / smaller value: 1185) if the horizontal scroll bar appears
@@ -32,7 +33,8 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
         let NewLine = 'false';
         let idAll = '';
         let id = '';
-        let loopCounter = 0; // Initialize counter
+        let loopCounter = 0;
+		let scrollCounter = 0;
 
         console.log('ServerName:', ServerName);
         console.log('ServerDescription:', ServerDescription);
@@ -128,17 +130,19 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
         loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
         parentContainer.appendChild(loggingCanvas);
 
-        // Create a container for both titleDiv and dataCanvas
-        const scrollContainer = document.createElement("div");
-        scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
-        scrollContainer.style.display = "block";
-        scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
-        scrollContainer.style.width = "100%";
-        scrollContainer.style.whiteSpace = "pre-wrap";
-        loggingCanvas.appendChild(scrollContainer);
+		// Create a container for both titleDiv and dataCanvas
+		const scrollContainer = document.createElement("div");
+		scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
+		scrollContainer.style.display = "block";
+		scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
+		scrollContainer.style.width = "100%";
+		scrollContainer.style.height = "100%";
+		scrollContainer.style.whiteSpace = "pre-wrap";
+		loggingCanvas.appendChild(scrollContainer);
 
-        const loggingCanvasWidth = scrollContainer.getBoundingClientRect().width;
-        const isSmallScreen = loggingCanvasWidth < ScreenLimit;
+		const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
+		const isSmallScreen = loggingCanvasWidth < ScreenLimit;
+		//console.log(loggingCanvasWidth);
 
         // Create and configure title div
         const titleDiv = document.createElement("div");
@@ -149,55 +153,48 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
             titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
         }
 
-        titleDiv.style.padding = "10px";
-        titleDiv.style.display = "block"; // Allow block display to stack elements vertically
-        titleDiv.style.fontFamily = "Monospace"; // Customize font
-        titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
-        titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
-        titleDiv.style.width = "max-content"; // Ensure content dictates width
-        titleDiv.style.whiteSpace = "pre-wrap";
-        scrollContainer.appendChild(titleDiv);
+		titleDiv.style.padding = "10px";
+		titleDiv.style.display = "block"; // Allow block display to stack elements vertically
+		titleDiv.style.fontFamily = "Monospace"; // Customize font
+		titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+		titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
+		titleDiv.style.width = "max-content"; // Ensure content dictates width
+		titleDiv.style.whiteSpace = "pre-wrap";
+		scrollContainer.appendChild(titleDiv);
 
-        // Create and configure data canvas
-        let dataCanvas = document.createElement("div");
-        dataCanvas.id = "output-canvas";
-        dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
-        dataCanvas.style.color = "white";
-        dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
-        dataCanvas.style.fontFamily = "Monospace";
-        dataCanvas.style.position = "relative";
-        dataCanvas.style.padding = "0";
-        dataCanvas.style.whiteSpace = "nowrap";
-        dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
-        dataCanvas.style.width = "max-content"; // Ensure content dictates width
-        scrollContainer.appendChild(dataCanvas);
+		// Create and configure data canvas
+		let dataCanvas = document.createElement("div");
+		dataCanvas.id = "output-canvas";
+		dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
+		dataCanvas.style.color = "white";
+		dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+		dataCanvas.style.fontFamily = "Monospace";
+		dataCanvas.style.position = "relative";
+		dataCanvas.style.padding = "0";
+		dataCanvas.style.whiteSpace = "nowrap";
+		dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
+		dataCanvas.style.width = "max-content"; // Ensure content dictates width
+		dataCanvas.style.height = "65%";
+		dataCanvas.style.maxHeight = "65%";
+		scrollContainer.appendChild(dataCanvas);
 
-        // Function to set the height of the dataCanvas
-        function setCanvasHeight() {
-            const windowHeight = window.innerHeight; // Height of the browser window
-            let canvasHeight;
+		// Adjust dataCanvas height based on scrollContainer height
+		function adjustDataCanvasHeight() {
+			let scrollContainerHeight = scrollContainer.getBoundingClientRect().height;
+			scrollContainerHeight = Math.floor(scrollContainerHeight); // Convert to integer
 
-            // Adjust the height based on different screen heights
-            if (windowHeight <= 650) {
-                canvasHeight = windowHeight * 0.075; // For screens smaller or equal to 650px
-                dataCanvas.style.marginTop = "-10px";
-            } else if (windowHeight <= 900) {
-                canvasHeight = windowHeight * 0.08; // For screens smaller or equal to 900px
-                dataCanvas.style.marginTop = "-10px";
-            } else {
-                canvasHeight = windowHeight * 0.118; // For larger screens
-                dataCanvas.style.marginTop = "0px";
-            }
+			console.log('scrollContainerHeight:',scrollContainerHeight);
 
-            // Set the height of the dataCanvas
-            dataCanvas.style.maxHeight = `${canvasHeight}px`;
-        }
-
-        // Call the function to set the initial height of the dataCanvas
-        setCanvasHeight();
-
-        // Add an event listener to adjust the height on window resize
-        window.addEventListener('resize', setCanvasHeight);
+			if (scrollContainerHeight > 112) {
+				dataCanvas.style.height = "65%";
+				dataCanvas.style.maxHeight = "65%";
+				dataCanvas.style.marginTop = "0px";
+			} else {
+				dataCanvas.style.height = "48%";
+				dataCanvas.style.maxHeight = "48%";
+				dataCanvas.style.marginTop = "-10px";
+			}
+		}
 
         // Utility function to pad strings with spaces
         function padLeftWithSpaces(str, targetLength) {
@@ -219,9 +216,7 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
 
         if (!downloadButtonsContainer) {
             downloadButtonsContainer = document.createElement("div");
-            downloadButtonsContainer.className
-
- = "download-buttons-container";
+            downloadButtonsContainer.className = "download-buttons-container";
             downloadButtonsContainer.style.display = "none";
             downloadButtonsContainer.style.position = "relative";
             downloadButtonsContainer.style.marginLeft = "76.0%";
@@ -444,9 +439,7 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
                 let outputArray = pol 
-                    ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} |
-
- ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth}`
+                    ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth}`
                     : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
 
                 if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
@@ -470,10 +463,11 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                         newOutputDiv.style.padding = "0 10px";
                         if (dataCanvas instanceof Node) {
                             dataCanvas.appendChild(newOutputDiv);
-                        }
-
+                        }	
+						dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
                         id = '';
                         loopCounter = 0;
+						scrollCounter = 0;
 
                         if (FilterState) { 
                             outputArray += ` | ${id}`;
@@ -485,36 +479,43 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                                 newOutputDiv.textContent = outputText;							
                                 if (dataCanvas instanceof Node) {
                                     dataCanvas.appendChild(newOutputDiv);
-                                }     				
-                                dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+                                }    
+								dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;							
                                 outputArray += ` | ${id}`;
                                 logDataArray.push(outputArray);
                                 id = '';
                                 loopCounter = 0;
+								
                             }	
                         } else {
-                            dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
                             outputArray += ` | ${id}`;
                             logDataArray.push(outputArray);
                             id = '';
                             loopCounter = 0;
                         }	
                     } else {
-                        if (dataCanvas && dataCanvas.lastChild) {
+                        if (dataCanvas && dataCanvas.lastChild) {						
+													
                             if (FilterState) { 
                                 if (!data.picode.includes('?') && data.station && data.city) {
                                     const lastOutputDiv = dataCanvas.lastChild;
                                     lastOutputDiv.textContent = outputText;	
-                                    dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;							
+									if (scrollCounter === 0) {
+										dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+										scrollCounter = 1;
+									}									
                                     outputArray += ` | ${id}`;
                                     logDataArray[logDataArray.length -1] = outputArray;
                                 }						
                             } else {
                                 const lastOutputDiv = dataCanvas.lastChild;
                                 lastOutputDiv.textContent = outputText;
+								if (scrollCounter === 0) {
+									dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+									scrollCounter = 1;
+								}
                                 outputArray += ` | ${id}`;
                                 logDataArray[logDataArray.length -1] = outputArray;
-                                dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
                             }
                         }
                     }
@@ -541,7 +542,12 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                 LoggerButton.classList.add('bg-color-4');
                 coverTuneButtonsPanel(true); // Cover when logger is on
                 displaySignalOutput();
-
+				
+				// Delayed call to set the initial height
+				setTimeout(adjustDataCanvasHeight, 100);
+				// Optionally, add an event listener to adjust the height dynamically if the container's size changes
+				window.addEventListener('resize', adjustDataCanvasHeight);	
+				
                 // Show the download buttons
                 if (downloadButtonsContainer) {
                     downloadButtonsContainer.style.display = 'flex';
@@ -962,7 +968,7 @@ function downloadDataCSV() {
             return freqA - freqB || piA.localeCompare(piB);
         });
 
-        allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [Filter MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
+        allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
 
         // Initialize the previous record for comparison
         let previousRecord = null;
@@ -1039,7 +1045,7 @@ async function downloadDataHTML() {
     const filterState = getFilterStateFromCookie().state;
 
     let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
-    allData += filterState ? `RDS-LOGGER [Filter MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
+    allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
 
     if (filterState) {
         allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
@@ -1049,16 +1055,16 @@ async function downloadDataHTML() {
 
     let sortedLogDataArray = [...logDataArray];
 
-    sortedLogDataArray.sort((a, b) => {
-        const [freqA, cleanedPiA] = a.split('|').map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
-        const [freqB, cleanedPiB] = b.split('|').map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
-        if (freqA === freqB) {
-            return cleanedPiA.localeCompare(cleanedPiB);
-        }
-        return freqA - freqB;
-    });
-
     if (filterState) {
+        sortedLogDataArray.sort((a, b) => {
+            const [dateA, timeA, freqA, piA] = a.split('|').map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+            const [dateB, timeB, freqB, piB] = b.split('|').map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+            if (freqA === freqB) {
+                return piA.localeCompare(piB);
+            }
+            return freqA - freqB;
+        });
+
         // Initialize the previous record for comparison
         let previousRecord = null;
         const filteredLogDataArray = [];
