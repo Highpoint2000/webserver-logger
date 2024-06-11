@@ -4,7 +4,7 @@
 ///                                                                                ///
 ///  by Highpoint                                                                  ///
 ///                                                                                ///
-///                                                         last update: 10.06.24  ///
+///                                                         last update: 11.06.24  ///
 //////////////////////////////////////////////////////////////////////////////////////
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
@@ -941,185 +941,187 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
             });
         }
 
-        function downloadDataCSV() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
+function downloadDataCSV() {
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const currentTime = formatTime(now);
+    const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
 
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
 
-            let allData;
+    let allData;
+    let sortedLogDataArray = [...logDataArray];
 
-            if (FilterState) {
-                // Sort logDataArray by frequency if filter mode  is active
-                logDataArray.sort((a, b) => {
-                    const freqA = parseFloat(a.split('|')[2].trim());
-                    const freqB = parseFloat(b.split('|')[2].trim());
-                    return freqA - freqB;
-                });
+    if (FilterState) {
+        // Sort the copied array by frequency and cleanedPi
+        sortedLogDataArray.sort((a, b) => {
+            const freqA = parseFloat(a.split('|')[2].trim());
+            const freqB = parseFloat(b.split('|')[2].trim());
+            const piA = a.split('|')[3].trim().replace('?', '');
+            const piB = b.split('|')[3].trim().replace('?', '');
+            return freqA - freqB || piA.localeCompare(piB);
+        });
 
-                allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [Filter MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
+        allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [Filter MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
 
-                // Initialize the previous record for comparison
-                let previousRecord = null;
-                const filteredLogDataArray = [];
+        // Initialize the previous record for comparison
+        let previousRecord = null;
+        const filteredLogDataArray = [];
 
-                logDataArray.forEach(line => {
-                    const [date, time, freq, pi, ps, name, city, ...rest] = line.split('|').map(value => value.trim());
-                    const cleanedPi = pi.replace('?', '');
+        sortedLogDataArray.forEach(line => {
+            const [date, time, freq, pi, ps, name, city, ...rest] = line.split('|').map(value => value.trim());
+            const cleanedPi = pi.replace('?', '');
 
-                    if (previousRecord) {
-                        const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+            if (previousRecord) {
+                const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
 
-                        if (freq === prevFreq && cleanedPi === prevPi) {
-                            if (name === prevName && city === prevCity) {
-                                // Skip the current record
-                                return;
-                            } else if (prevName === "" && prevCity === "") {
-                                // Replace the previous record
-                                previousRecord = [freq, cleanedPi, name, city];
-                                filteredLogDataArray[filteredLogDataArray.length - 1] = `${date}|${time}|${freq}|${pi}|${ps}|${name}|${city}|${rest.join('|')}`;
-                                return;
-                            } else {
-                                // Skip the current record
-                                return;
-                            }
-                        }
+                if (freq === prevFreq && cleanedPi === prevPi) {
+                    if (name === prevName && city === prevCity) {
+                        // Skip the current record
+                        return;
+                    } else if (prevName === "" && prevCity === "") {
+                        // Replace the previous record
+                        previousRecord = [freq, cleanedPi, name, city];
+                        filteredLogDataArray[filteredLogDataArray.length - 1] = `${date}|${time}|${freq}|${pi}|${ps}|${name}|${city}|${rest.join('|')}`;
+                        return;
+                    } else {
+                        // Skip the current record
+                        return;
                     }
-
-                    previousRecord = [freq, cleanedPi, name, city];
-                    filteredLogDataArray.push(line);
-                });
-
-                logDataArray = filteredLogDataArray;
-            } else {
-                console.log(FilterState);
-                allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n`;
-            }
-
-            logDataArray.forEach(line => {
-                const [date, time, ...rest] = line.split('|').map(value => value.trim());
-
-                if (FilterState) {
-                    const modifiedLine = `${rest.join(';')};${date};${time}`;
-                    allData += modifiedLine + '\n';
-                } else {
-                    const modifiedLine = line.replaceAll(/\s*\|\s*/g, ";");
-                    allData += modifiedLine + '\n';
                 }
-            });
-
-            const blob = new Blob([allData], { type: "text/plain" });
-
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                const link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
             }
+
+            previousRecord = [freq, cleanedPi, name, city];
+            filteredLogDataArray.push(line);
+        });
+
+        sortedLogDataArray = filteredLogDataArray;
+    } else {
+        console.log(FilterState);
+        allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n`;
+    }
+
+    sortedLogDataArray.forEach(line => {
+        const [date, time, ...rest] = line.split('|').map(value => value.trim());
+
+        if (FilterState) {
+            const modifiedLine = `${rest.join(';')};${date};${time}`;
+            allData += modifiedLine + '\n';
+        } else {
+            const modifiedLine = line.replaceAll(/\s*\|\s*/g, ";");
+            allData += modifiedLine + '\n';
         }
+    });
+
+    const blob = new Blob([allData], { type: "text/plain" });
+
+    if (window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+    } else {
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+    }
+}
 
         // Cache for API responses
         const apiCache = {};
 
-        async function downloadDataHTML() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
-            let id = '';
+async function downloadDataHTML() {
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const currentTime = formatTime(now);
+    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
+    let id = '';
 
-            const FilterState = getFilterStateFromCookie().state;
+    const filterState = getFilterStateFromCookie().state;
 
-            let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription}<br>`;
-            allData += FilterState ? `RDS-LOGGER [Filter MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
+    let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
+    allData += filterState ? `RDS-LOGGER [Filter MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
 
-            if (FilterState) {
-                allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
-            } else {
-                allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
-            }
+    if (filterState) {
+        allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
+    } else {
+        allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
+    }
 
-            let sortedLogDataArray = [...logDataArray];
+    let sortedLogDataArray = [...logDataArray];
 
-            if (FilterState) {
-                sortedLogDataArray.sort((a, b) => {
-                    const freqA = parseFloat(a.split('|')[2].trim());
-                    const freqB = parseFloat(b.split('|')[2].trim());
-                    return freqA - freqB;
-                });
-            }
-
-            let previousEntry = { freq: null, picode: null, station: null, city: null };
-
-            for (let i = 0; i < sortedLogDataArray.length; i++) {
-                let line = sortedLogDataArray[i];
-                let [date, time, currentFrequency, picode, ps, station, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(item => item.trim());
-                picode = picode.replace('?', ''); // Remove question mark for comparison
-
-                if (FilterState) {
-                    if (previousEntry.freq === currentFrequency && previousEntry.picode === picode) {
-                        if (previousEntry.station === station && previousEntry.city === city) {
-                            continue; // Skip duplicate entry
-                        }
-                        if (!previousEntry.station && !previousEntry.city && station && city) {
-                            sortedLogDataArray[i - 1] = line; // Replace previous entry with current
-                        }
-                        if (previousEntry.station && previousEntry.city && !station && !city) {
-                            continue; // Skip current entry
-                        }
-                    } else {
-                        previousEntry = { freq: currentFrequency, picode: picode, station: station, city: city };
-                    }
-                }
-
-                let formattedLine = line.replace(/\s*\|\s*/g, "</td><td>");
-                let lat = LAT;
-                let lon = LON;
-
-                if (id !== '') {
-                    let link1 = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*`;
-                    let link2 = ' ';
-                    if (FMLIST_OM_ID !== '') {
-                        link2 = `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>`;
-                    }
-                    if (FilterState) {
-                        allData += `<tr><td>${currentFrequency}</td><td>${picode}</td><td>${ps}</td><td>${station}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
-                    } else {
-                        allData += `<tr><td>${formattedLine}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
-                    }
-                } else {
-                    let link1 = ' ';
-                    let link2 = ' ';
-                    if (FilterState) {
-                        allData += `<tr><td>${currentFrequency}</td><td>${picode}</td><td>${ps}</td><td>${station}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-                    } else {
-                        allData += `<tr><td>${formattedLine}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-                    }
-                }
-            }
-
-            let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
-            allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></pre></body></html>`;
-
-            const blob = new Blob([allData], { type: "text/html" });
-
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                const link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                window.URL.revoke
-
-ObjectURL(link.href);
-            }
+    sortedLogDataArray.sort((a, b) => {
+        const [freqA, cleanedPiA] = a.split('|').map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+        const [freqB, cleanedPiB] = b.split('|').map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+        if (freqA === freqB) {
+            return cleanedPiA.localeCompare(cleanedPiB);
         }
+        return freqA - freqB;
+    });
+
+    if (filterState) {
+        // Initialize the previous record for comparison
+        let previousRecord = null;
+        const filteredLogDataArray = [];
+
+        sortedLogDataArray.forEach(line => {
+            let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+            const cleanedPi = pi.replace('?', '');
+
+            if (previousRecord) {
+                const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+
+                if (freq === prevFreq && cleanedPi === prevPi) {
+                    if (name === prevName && city === prevCity) {
+                        // Skip the current record
+                        return;
+                    } else if (prevName === "" && prevCity === "") {
+                        // Replace the previous record
+                        previousRecord = [freq, cleanedPi, name, city];
+                        filteredLogDataArray[filteredLogDataArray.length - 1] = line;
+                        return;
+                    } else {
+                        // Skip the current record
+                        return;
+                    }
+                }
+            }
+
+            previousRecord = [freq, cleanedPi, name, city];
+            filteredLogDataArray.push(line);
+        });
+
+        sortedLogDataArray = filteredLogDataArray;
+    }
+
+    sortedLogDataArray.forEach(line => {
+        let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+
+        let formattedLine = line.replace(/\s*\|\s*/g, "</td><td>");
+        let link1 = id !== '' ? `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*` : ' ';
+        let link2 = FMLIST_OM_ID !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : ' ';
+
+        if (filterState) {
+            allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+        } else {
+            allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+        }
+    });
+
+    let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
+    allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></pre></body></html>`;
+
+    const blob = new Blob([allData], { type: "text/html" });
+
+    if (window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+    } else {
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+    }
+}
 
         // Get ID value from API
         async function getidValue(currentFrequency, picode, itu, city) {
