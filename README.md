@@ -1,4 +1,4 @@
-# RDS Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
+# RDS-Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
 ![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/9f2481cf-5072-4bce-9908-261f022e67b9)
 
@@ -21,13 +21,18 @@ If the logging plugin is activated, logging in the background will automatically
 
 (*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
 
+### Version 1.3a
+
+- Fixed Problems with table layout
+- Optimization of the filter function for html- & csv-exports
+
+## History: 
+
 ### Version 1.3
 
 - Added filter function for logging and downloading (see description above!)
 - fixed the overwrite bug when pressing up down frequently
 - remove the txt download
-
-## History: 
 
 ### Version 1.2b
 
