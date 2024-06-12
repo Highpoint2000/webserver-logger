@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3a)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3b)       ///
 ///                                                      ///
-///  by Highpoint            last update: 11.06.24       ///
+///  by Highpoint                last update: 12.06.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   /// 
 ///                                                      ///                         
@@ -10,8 +10,35 @@
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / smaller value: 1185) if the horizontal scroll bar appears
+const TestMode = 'false'; // 'false' is only for testing
 
 /////////////////////////////////////////////////////////////////////////////////////
+
+let test_frequency ='';
+let test_picode = '';        
+let test_itu = '';           
+let test_city = '';    
+let test_ps = '';      
+let test_station = ''; 
+let test_pol = '';             
+let test_erp = '';             
+let test_distance = '';      
+let test_azimuth = '';        
+
+if (TestMode === 'true') {
+    console.log('Test mode enabled');
+    // These variables are only assigned if TestMode is 'true'
+    test_frequency ='90.300';	// Test Frequence
+    test_picode = '7261';        // Test Picode
+    test_itu = 'RUS';            // Test ITU code
+    test_city = 'Moskva';    // Test city
+    test_ps = '*_ABTO_*';      // Test PS (Program Service name)
+    test_station = 'Avtoradio'; // Test station name
+    test_pol = 'C';              // Test polarization
+    test_erp = '160';             // Test ERP (Effective Radiated Power)
+    test_distance = '1416';      // Test distance
+    test_azimuth = '33';        // Test azimuth
+}
 
 (() => {
     const loggerPlugin = (() => {
@@ -277,6 +304,8 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
 
             // Event listener for button click
             FMDXButton.addEventListener("click", function () {
+				const data = previousDataByFrequency[currentFrequency];
+				const station = data ? data.station : '';
                 if (id) {
                     // Check if the popup window is already open
                     if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
@@ -289,7 +318,11 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                         isOpenFMDX = true;
                     }
                 } else {
-                    alert("Station not yet fully identified!");
+			if (station === '') { 
+				alert("Please be patient! The station is not yet fully identified.");
+			} else { 				
+				alert("No Station ID found or Proxy Server is down!");
+			}			                
                 }
             });
 
@@ -333,6 +366,8 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
 
             // Event listener for button click
             FMLISTButton.addEventListener("click", function () {
+				const data = previousDataByFrequency[currentFrequency];
+				const station = data ? data.station : '';
                 if (FMLIST_OM_ID) {
                     if (id) {
                         // Check if the popup window is already open
@@ -347,7 +382,11 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                             isOpenFMLIST = true;
                         }
                     } else {
-                        alert("Station not yet fully identified!");
+                        if (station === '') { 
+				alert("Please be patient! The station is not yet fully identified.");
+			} else { 				
+				alert("No Station ID found or Proxy Server is down!");
+			}	
                     }
                 }
             });
@@ -409,7 +448,7 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                 previousFrequency = currentFrequency;
                 NewLine = 'true';
             }
-
+			
             const now = new Date();
             const date = formatDate(now);
             const time = formatTime(now);
@@ -419,41 +458,75 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
             const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
             const isSmallScreen = loggingCanvasWidth < ScreenLimit;
 
-            if (data && data.picode.length > 1) {
-                const station = isSmallScreen
-                    ? truncateString(padRightWithSpaces(data.station, 23), 23)
-                    : truncateString(padRightWithSpaces(data.station, 25), 25);
-                const city = isSmallScreen
-                    ? truncateString(padRightWithSpaces(data.city, 19), 19)
-                    : truncateString(padRightWithSpaces(data.city, 21), 21);
-                const itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
-                const pol = truncateString(data.pol, 1);
-                const erpTxt = truncateString(padLeftWithSpaces(String(data.erp), 6), 6);
-                const distance = truncateString(padLeftWithSpaces(data.distance, 4), 4);
-                const azimuth = truncateString(padLeftWithSpaces(data.azimuth, 3), 3);
-                const picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
-                const ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
+            if ((data && data.picode.length > 1 && TestMode !== 'true') || (TestMode === 'true' && currentFrequency === test_frequency)) {
+				
+				let station = "";
+				let city = "";
+				let itu = "";
+				let pol = "";
+				let erpTxt = "";
+				let distance = "";
+				let azimuth = "";
+				let picode = "";
+				let ps = "";
+					
+       if (TestMode === 'true' && currentFrequency === test_frequency) {   
+	   
+            station = isSmallScreen
+                ? truncateString(padRightWithSpaces(test_station, 23), 23)
+                : truncateString(padRightWithSpaces(test_station, 25), 25);                
+            city = isSmallScreen
+                ? truncateString(padRightWithSpaces(test_city, 19), 19)
+                : truncateString(padRightWithSpaces(test_city, 21), 21);
+            itu = truncateString(padLeftWithSpaces(test_itu, 3), 3);
+            pol = truncateString(test_pol, 1);
+            erpTxt = truncateString(padLeftWithSpaces(String(test_erp), 6), 6);
+            distance = truncateString(padLeftWithSpaces(test_distance, 4), 4);
+            azimuth = truncateString(padLeftWithSpaces(test_azimuth, 3), 3);
+            picode = truncateString(padRightWithSpaces(test_picode, 7), 7);
+            ps = truncateString(padRightWithSpaces(test_ps.replace(/ /g, "_"), 9), 9);
+        } else {
+            station = isSmallScreen
+                ? truncateString(padRightWithSpaces(data.station, 23), 23)
+                : truncateString(padRightWithSpaces(data.station, 25), 25);		
+            city = isSmallScreen
+                ? truncateString(padRightWithSpaces(data.city, 19), 19)
+                : truncateString(padRightWithSpaces(data.city, 21), 21);
+            itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
+            pol = truncateString(data.pol, 1);
+            erpTxt = truncateString(padLeftWithSpaces(String(data.erp), 6), 6);
+            distance = truncateString(padLeftWithSpaces(data.distance, 4), 4);
+            azimuth = truncateString(padLeftWithSpaces(data.azimuth, 3), 3);
+            picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
+            ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
 
-                const outputText = pol 
+		}
+				const outputText = station 
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
-                let outputArray = pol 
+                let outputArray = station 
                     ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth}`
                     : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
 
                 if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
-                    if (pol && loopCounter === 0) {
-                        loopCounter++;
-                        if (loopCounter === 1) {
-                            id = await getidValue(currentFrequency, data.picode, data.itu, data.city);
+					  if (data.station && loopCounter === 0) {
 
-                            if (id) {
-                                idAll += idAll ? `,${id}` : id;
-                            }
-                        }
+							if (TestMode === 'true' && currentFrequency === test_frequency) {   
+								id = await getidValue(currentFrequency, test_picode, test_itu, test_city);
+							} else {
+								id = await getidValue(currentFrequency, data.picode, data.itu, data.city);
+							}
+								if (id === undefined) {
+								let id = '';
+							}
+							if (id && !idAll.split(',').includes(id)) {
+								idAll += idAll ? `,${id}` : id;
+							}
+							
+							loopCounter++;
                     }
-
+									
                     if (NewLine === 'true') {
                         NewLine = 'false';
                         const newOutputDiv = document.createElement("div");
@@ -464,40 +537,33 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
                         if (dataCanvas instanceof Node) {
                             dataCanvas.appendChild(newOutputDiv);
                         }	
-						dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
-                        id = '';
-                        loopCounter = 0;
-						scrollCounter = 0;
-
-                        if (FilterState) { 
-                            outputArray += ` | ${id}`;
-                            logDataArray.push(outputArray);
-                            if (!data.picode.includes('?') && data.station && data.city) {
-                                const exists = checkIfExists(currentFrequency, data.picode, data.station, data.city, logDataArray);
-
+						
+						dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;	
+                        if (FilterState) {     
+								if (data.station === '') {
+								 loopCounter = 0;
+								 }								
+                            if (!data.picode.includes('?') && data.station && data.city) {		
+					
+							dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;	
                                 if (exists) return;	
                                 newOutputDiv.textContent = outputText;							
                                 if (dataCanvas instanceof Node) {
                                     dataCanvas.appendChild(newOutputDiv);
                                 }    
-								dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;							
-                                outputArray += ` | ${id}`;
-                                logDataArray.push(outputArray);
-                                id = '';
-                                loopCounter = 0;
+								dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;	
+								outputArray += ` | ${id}`;								
+								logDataArray.push(outputArray);
 								
                             }	
                         } else {
-                            outputArray += ` | ${id}`;
+							outputArray += ` | ${id}`;
                             logDataArray.push(outputArray);
-                            id = '';
-                            loopCounter = 0;
                         }	
                     } else {
-                        if (dataCanvas && dataCanvas.lastChild) {						
-													
+                        if (dataCanvas && dataCanvas.lastChild) {																	
                             if (FilterState) { 
-                                if (!data.picode.includes('?') && data.station && data.city) {
+                                if (!data.picode.includes('?') && data.station && data.city) {								
                                     const lastOutputDiv = dataCanvas.lastChild;
                                     lastOutputDiv.textContent = outputText;	
 									if (scrollCounter === 0) {
@@ -505,15 +571,18 @@ const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / sm
 										scrollCounter = 1;
 									}									
                                     outputArray += ` | ${id}`;
-                                    logDataArray[logDataArray.length -1] = outputArray;
+                                    logDataArray[logDataArray.length] = outputArray;
                                 }						
                             } else {
-                                const lastOutputDiv = dataCanvas.lastChild;
+	                            const lastOutputDiv = dataCanvas.lastChild;
                                 lastOutputDiv.textContent = outputText;
 								if (scrollCounter === 0) {
 									dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
 									scrollCounter = 1;
-								}
+								}			
+								if (data.station === '') {
+									loopCounter = 0;
+								 }										
                                 outputArray += ` | ${id}`;
                                 logDataArray[logDataArray.length -1] = outputArray;
                             }
@@ -1101,15 +1170,18 @@ async function downloadDataHTML() {
 
     sortedLogDataArray.forEach(line => {
         let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-
+ 
+        let link2 = ' ';
         let formattedLine = line.replace(/\s*\|\s*/g, "</td><td>");
-        let link1 = id !== '' ? `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*` : ' ';
-        let link2 = FMLIST_OM_ID !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : ' ';
+        let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : ' ';
+		if (FMLIST_OM_ID !== '') {
+			link2 = id !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : ' ' ;
+		}
 
-        if (filterState) {
-            allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+        if (filterState) {		
+            allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
         } else {
-            allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td><a href="${link1}" target="_blank">LINK</a></td><td>${link2}</td></tr>\n`;
+            allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
         }
     });
 
