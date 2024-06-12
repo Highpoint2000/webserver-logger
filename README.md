@@ -21,12 +21,18 @@ If the logging plugin is activated, logging in the background will automatically
 
 (*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
 
+### Version 1.3b
+
+- Error correction in html export
+- Improved error display
+- Bug fixing
+
+## History: 
+
 ### Version 1.3a
 
 - Fixed Problems with table layout
-- Optimization of the filter function for html- & csv-exports
-
-## History: 
+- Optimization of the filter function for html-exports
 
 ### Version 1.3
 
