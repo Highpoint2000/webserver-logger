@@ -973,7 +973,7 @@ function initializeLoggerButton() {
     LoggerButton.style.borderRadius = '0px';
     LoggerButton.style.width = '100px';
     LoggerButton.style.position = 'relative';
-    LoggerButton.style.marginTop = '15px';
+    LoggerButton.style.marginTop = '16px';
     LoggerButton.style.right = '0px';
     LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
     LoggerButton.classList.add('bg-color-2');
