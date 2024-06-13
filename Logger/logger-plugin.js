@@ -2,15 +2,17 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3b)       ///
 ///                                                      ///
-///  by Highpoint                last update: 12.06.24   ///
+///  by Highpoint                last update: 13.06.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   /// 
 ///                                                      ///                         
 ////////////////////////////////////////////////////////////
 
+
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const ScreenLimit = '1180'; // Set for smaller screens (default value: 1180 / smaller value: 1185) if the horizontal scroll bar appears
 const TestMode = 'false'; // 'false' is only for testing
+const plugin_version = 'V1.3b'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -28,7 +30,7 @@ let test_azimuth = '';
 if (TestMode === 'true') {
     console.log('Test mode enabled');
     // These variables are only assigned if TestMode is 'true'
-    test_frequency ='90.300';	// Test Frequence
+	test_frequency ='90.300';	// Test Frequence
     test_picode = '7261';        // Test Picode
     test_itu = 'RUS';            // Test ITU code
     test_city = 'Moskva';    // Test city
@@ -318,11 +320,11 @@ if (TestMode === 'true') {
                         isOpenFMDX = true;
                     }
                 } else {
-			if (station === '') { 
-				alert("Please be patient! The station is not yet fully identified.");
-			} else { 				
-				alert("No Station ID found or Proxy Server is down!");
-			}			                
+					if (station === '') { 
+						alert("Please be patient! The station is not yet fully identified.");
+					} else { 				
+						alert("No Station ID found or Proxy Server is down!");
+					}			                
                 }
             });
 
@@ -383,10 +385,10 @@ if (TestMode === 'true') {
                         }
                     } else {
                         if (station === '') { 
-				alert("Please be patient! The station is not yet fully identified.");
-			} else { 				
-				alert("No Station ID found or Proxy Server is down!");
-			}	
+							alert("Please be patient! The station is not yet fully identified.");
+						} else { 				
+							alert("No Station ID found or Proxy Server is down!");
+						}	
                     }
                 }
             });
@@ -958,39 +960,46 @@ if (TestMode === 'true') {
             checkBlacklist();
         });
 
-        // Initialize the logger button
-        function initializeLoggerButton() {
-            setupWebSocket();
+// Initialize the logger button
+function initializeLoggerButton() {
+    setupWebSocket();
 
-            // Ensure download buttons are initially hidden
-            const LoggerButton = document.createElement('button');
-            LoggerButton.classList.add('hide-phone');
-            LoggerButton.id = 'Log-on-off';
-            LoggerButton.setAttribute('aria-label', 'Scan');
-            LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
-            LoggerButton.style.borderRadius = '0px';
-            LoggerButton.style.width = '100px';
-            LoggerButton.style.position = 'relative';
-            LoggerButton.style.marginTop = '15px';
-            LoggerButton.style.right = '0px';
-            LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
-            LoggerButton.classList.add('bg-color-2');
+    // Ensure download buttons are initially hidden
+    const LoggerButton = document.createElement('button');
+    LoggerButton.classList.add('hide-phone');
+    LoggerButton.id = 'Log-on-off';
+    LoggerButton.setAttribute('aria-label', 'Scan');
+    LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
+    LoggerButton.style.borderRadius = '0px';
+    LoggerButton.style.width = '100px';
+    LoggerButton.style.position = 'relative';
+    LoggerButton.style.marginTop = '15px';
+    LoggerButton.style.right = '0px';
+    LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
+    LoggerButton.classList.add('bg-color-2');
+    LoggerButton.title = `Plugin Version: ${plugin_version}`; // Add title attribute for mouseover effect
 
-            const wrapperElement = document.querySelector('.tuner-info');
-            if (wrapperElement) {
-                const buttonWrapper = document.createElement('div');
-                buttonWrapper.classList.add('button-wrapper');
-                buttonWrapper.appendChild(LoggerButton);
-                wrapperElement.appendChild(buttonWrapper);
+    const wrapperElement = document.querySelector('.tuner-info');
+    if (wrapperElement) {
+        const buttonWrapper = document.createElement('div');
+        buttonWrapper.classList.add('button-wrapper');
+        buttonWrapper.appendChild(LoggerButton);
+        wrapperElement.appendChild(buttonWrapper);
 
-                // Add empty line after the button
-                const emptyLine = document.createElement('br');
-                wrapperElement.appendChild(emptyLine);
-            }
+        // Add empty line after the button
+        const emptyLine = document.createElement('br');
+        wrapperElement.appendChild(emptyLine);
+    }
 
-            LoggerButton.addEventListener('click', toggleLogger);
-            displaySignalCanvas();
-        }
+    LoggerButton.addEventListener('click', toggleLogger);
+    displaySignalCanvas();
+}
+
+// Initialize on window load
+window.onload = function () {
+    initializeLoggerButton();
+    checkBlacklist();
+};
 
         // Initialize on window load
         window.onload = function () {
