@@ -2,9 +2,7 @@
 
 ![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/9f2481cf-5072-4bce-9908-261f022e67b9)
 
-## Current version: 
-
-### Version 1.3c
+## Version 1.3c
 
 - Layout adjustment for smaller screens
 - Logging optimizations
