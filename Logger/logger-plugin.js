@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3c)       ///
 ///                                                      ///
-///  by Highpoint                last update: 15.06.24   ///
+///  by Highpoint                last update: 18.06.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -1029,21 +1029,23 @@ function downloadDataCSV() {
     let sortedLogDataArray = [...logDataArray];
 
     try {
-        if (FilterState) {
-            // Sort the copied array by frequency and cleanedPi
-            sortedLogDataArray.sort((a, b) => {
-                // Ensure 'a' and 'b' are valid strings
-                if (typeof a !== 'string' || typeof b !== 'string') {
-                    console.error('Invalid data format in sortedLogDataArray:', a, b);
-                    return 0; // Return no change if elements are not strings
-                }
+			if (FilterState) {
+				// Sort the copied array by frequency and cleanedPi
+				sortedLogDataArray.sort((a, b) => {
+					// Ensure 'a' and 'b' are valid strings
+					if (typeof a !== 'string' || typeof b !== 'string') {
+						console.error('Invalid data format in sortedLogDataArray:', a, b);
+						return 0; // Return no change if elements are not strings
+				}
 
-                const freqA = parseFloat(a.split('|')[2]?.trim());
-                const freqB = parseFloat(b.split('|')[2]?.trim());
-                const piA = a.split('|')[3]?.trim().replace('?', '');
-                const piB = b.split('|')[3]?.trim().replace('?', '');
-                return freqA - freqB || piA.localeCompare(piB);
-            });
+					const freqA = parseFloat(a.split('|')[2]?.trim());
+					const freqB = parseFloat(b.split('|')[2]?.trim());
+					const piA = a.split('|')[3]?.trim().replace('?', '');
+					const piB = b.split('|')[3]?.trim().replace('?', '');
+
+					return freqA - freqB || piA.localeCompare(piB);
+				});
+
 
             allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
 
@@ -1156,66 +1158,65 @@ async function downloadDataHTML() {
     let sortedLogDataArray = [...logDataArray];
 
     if (filterState) {
-        sortedLogDataArray.sort((a, b) => {
-            // Check if a and b are valid strings before splitting
-            if (typeof a !== 'string' || typeof b !== 'string') {
-                return 0; // No change in order if a or b is not a string
-            }
+    // Sortiere das Array nach Frequenz zuerst
+    sortedLogDataArray.sort((a, b) => {
+        // Check if a and b are valid strings before splitting
+        if (typeof a !== 'string' || typeof b !== 'string') {
+            return 0; // No change in order if a or b is not a string
+        }
 
-            const partsA = a.split('|');
-            const partsB = b.split('|');
+        const partsA = a.split('|');
+        const partsB = b.split('|');
 
-            if (partsA.length < 4 || partsB.length < 4) {
-                return 0; // No change in order if split doesn't produce expected parts
-            }
+        if (partsA.length < 4 || partsB.length < 4) {
+            return 0; // No change in order if split doesn't produce expected parts
+        }
 
-            const [dateA, timeA, freqA, piA] = partsA.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
-            const [dateB, timeB, freqB, piB] = partsB.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+        const [dateA, timeA, freqA, piA] = partsA.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+        const [dateB, timeB, freqB, piB] = partsB.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
 
-            if (freqA === freqB) {
-                return piA.localeCompare(piB);
-            }
-            return freqA - freqB;
-        });
+        return freqA - freqB;
+    });
 
-        // Filter duplicates based on frequency and PI
-        let previousRecord = null;
-        const filteredLogDataArray = [];
+    // Filter duplicates based on frequency and PI
+    let previousRecord = null;
+    const filteredLogDataArray = [];
 
-        sortedLogDataArray.forEach(line => {
-            if (typeof line !== 'string') {
-                console.error(`Invalid line found: ${line}`);
-                return; // Skip this iteration if line is not a string
-            }
+    sortedLogDataArray.forEach(line => {
+        if (typeof line !== 'string') {
+            console.error(`Invalid line found: ${line}`);
+            return; // Skip this iteration if line is not a string
+        }
 
-            let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-            const cleanedPi = pi.replace('?', '');
+        let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+        const cleanedPi = pi.replace('?', '');
 
-            if (previousRecord) {
-                const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+        if (previousRecord) {
+            const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
 
-                if (freq === prevFreq && cleanedPi === prevPi) {
-                    if (name === prevName && city === prevCity) {
-                        // Skip the current record
-                        return;
-                    } else if (prevName === "" && prevCity === "") {
-                        // Replace the previous record
-                        previousRecord = [freq, cleanedPi, name, city];
-                        filteredLogDataArray[filteredLogDataArray.length - 1] = line;
-                        return;
-                    } else {
-                        // Skip the current record
-                        return;
-                    }
+            if (freq === prevFreq && cleanedPi === prevPi) {
+                if (name === prevName && city === prevCity) {
+                    // Skip the current record
+                    return;
+                } else if (prevName === "" && prevCity === "") {
+                    // Replace the previous record
+                    previousRecord = [freq, cleanedPi, name, city];
+                    filteredLogDataArray[filteredLogDataArray.length - 1] = line;
+                    return;
+                } else {
+                    // Skip the current record
+                    return;
                 }
             }
+        }
 
-            previousRecord = [freq, cleanedPi, name, city];
-            filteredLogDataArray.push(line);
-        });
+        previousRecord = [freq, cleanedPi, name, city];
+        filteredLogDataArray.push(line);
+    });
 
-        sortedLogDataArray = filteredLogDataArray;
-    }
+    // Assign filtered array back to sortedLogDataArray
+    sortedLogDataArray = filteredLogDataArray;
+}
 
     sortedLogDataArray.forEach(line => {
         if (typeof line !== 'string') {
