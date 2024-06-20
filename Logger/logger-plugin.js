@@ -1,13 +1,12 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3c)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3d)       ///
 ///                                                      ///
-///  by Highpoint                last update: 18.06.24   ///
+///  by Highpoint                last update: 20.06.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
 ////////////////////////////////////////////////////////////
-
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
@@ -16,7 +15,7 @@ const plugin_version = 'V1.3c'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-let test_frequency ='';
+let test_frequency = '';
 let test_picode = '';        
 let test_itu = '';           
 let test_city = '';    
@@ -30,15 +29,15 @@ let test_azimuth = '';
 if (TestMode === 'true') {
     console.log('Test mode enabled');
     // These variables are only assigned if TestMode is 'true'
-	test_frequency ='90.300';	// Test Frequency
-    test_picode = '7261';        // Test Picode
-    test_itu = 'RUS';            // Test ITU code
-    test_city = 'Moskva';    // Test city
-    test_ps = '*_ABTO_*';      // Test PS (Program Service name)
+    test_frequency = '90.300';  // Test Frequency
+    test_picode = '7261';       // Test Picode
+    test_itu = 'RUS';           // Test ITU code
+    test_city = 'Moskva';       // Test city
+    test_ps = '*_ABTO_*';       // Test PS (Program Service name)
     test_station = 'Avtoradio'; // Test station name
-    test_pol = 'C';              // Test polarization
-    test_erp = '160';             // Test ERP (Effective Radiated Power)
-    test_distance = '1416';      // Test distance
+    test_pol = 'C';             // Test polarization
+    test_erp = '160';           // Test ERP (Effective Radiated Power)
+    test_distance = '1416';     // Test distance
     test_azimuth = '33';        // Test azimuth
 }
 
@@ -64,7 +63,10 @@ if (TestMode === 'true') {
         let idAll = '';
         let id = '';
         let loopCounter = 0;
-		let scrollCounter = 0;
+        let scrollCounter = 0;
+        let SaveFrequency = '';
+        let Savepicode = '';
+        let Savestation = '';
 
         console.log('ServerName:', ServerName);
         console.log('ServerDescription:', ServerDescription);
@@ -160,72 +162,72 @@ if (TestMode === 'true') {
         loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
         parentContainer.appendChild(loggingCanvas);
 
-		// Create a container for both titleDiv and dataCanvas
-		const scrollContainer = document.createElement("div");
-		scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
-		scrollContainer.style.display = "block";
-		scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
-		scrollContainer.style.width = "100%";
-		scrollContainer.style.height = "100%";
-		scrollContainer.style.whiteSpace = "pre-wrap";
-		loggingCanvas.appendChild(scrollContainer);
+        // Create a container for both titleDiv and dataCanvas
+        const scrollContainer = document.createElement("div");
+        scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
+        scrollContainer.style.display = "block";
+        scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
+        scrollContainer.style.width = "100%";
+        scrollContainer.style.height = "100%";
+        scrollContainer.style.whiteSpace = "pre-wrap";
+        loggingCanvas.appendChild(scrollContainer);
 
-		const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
-		//console.log(loggingCanvasWidth);
+        const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
+        //console.log(loggingCanvasWidth);
 
         // Create and configure title div
         const titleDiv = document.createElement("div");
 
         if (Screen === 'ultrasmall') {
             titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
-        } else if (Screen === 'small')  {
-			titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
-			} else {
-				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
-			}
+        } else if (Screen === 'small') {
+            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
+        } else {
+            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+        }
 
-		titleDiv.style.padding = "10px";
-		titleDiv.style.display = "block"; // Allow block display to stack elements vertically
-		titleDiv.style.fontFamily = "Monospace"; // Customize font
-		titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
-		titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
-		titleDiv.style.width = "max-content"; // Ensure content dictates width
-		titleDiv.style.whiteSpace = "pre-wrap";
-		scrollContainer.appendChild(titleDiv);
+        titleDiv.style.padding = "10px";
+        titleDiv.style.display = "block"; // Allow block display to stack elements vertically
+        titleDiv.style.fontFamily = "Monospace"; // Customize font
+        titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+        titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
+        titleDiv.style.width = "max-content"; // Ensure content dictates width
+        titleDiv.style.whiteSpace = "pre-wrap";
+        scrollContainer.appendChild(titleDiv);
 
-		// Create and configure data canvas
-		let dataCanvas = document.createElement("div");
-		dataCanvas.id = "output-canvas";
-		dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
-		dataCanvas.style.color = "white";
-		dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
-		dataCanvas.style.fontFamily = "Monospace";
-		dataCanvas.style.position = "relative";
-		dataCanvas.style.padding = "0";
-		dataCanvas.style.whiteSpace = "nowrap";
-		dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
-		dataCanvas.style.width = "max-content"; // Ensure content dictates width
-		dataCanvas.style.height = "65%";
-		dataCanvas.style.maxHeight = "65%";
-		scrollContainer.appendChild(dataCanvas);
+        // Create and configure data canvas
+        let dataCanvas = document.createElement("div");
+        dataCanvas.id = "output-canvas";
+        dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
+        dataCanvas.style.color = "white";
+        dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+        dataCanvas.style.fontFamily = "Monospace";
+        dataCanvas.style.position = "relative";
+        dataCanvas.style.padding = "0";
+        dataCanvas.style.whiteSpace = "nowrap";
+        dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
+        dataCanvas.style.width = "max-content"; // Ensure content dictates width
+        dataCanvas.style.height = "65%";
+        dataCanvas.style.maxHeight = "65%";
+        scrollContainer.appendChild(dataCanvas);
 
-		// Adjust dataCanvas height based on scrollContainer height
-		function adjustDataCanvasHeight() {
-			let scrollContainerHeight = scrollContainer.getBoundingClientRect().height;
-			scrollContainerHeight = Math.floor(scrollContainerHeight); // Convert to integer
+        // Adjust dataCanvas height based on scrollContainer height
+        function adjustDataCanvasHeight() {
+            let scrollContainerHeight = scrollContainer.getBoundingClientRect().height;
+            scrollContainerHeight = Math.floor(scrollContainerHeight); // Convert to integer
 
-			console.log('scrollContainerHeight:',scrollContainerHeight);
+            console.log('scrollContainerHeight:', scrollContainerHeight);
 
-			if (scrollContainerHeight > 112) {
-				dataCanvas.style.height = "65%";
-				dataCanvas.style.maxHeight = "65%";
-				dataCanvas.style.marginTop = "0px";
-			} else {
-				dataCanvas.style.height = "48%";
-				dataCanvas.style.maxHeight = "48%";
-				dataCanvas.style.marginTop = "-10px";
-			}
-		}
+            if (scrollContainerHeight > 112) {
+                dataCanvas.style.height = "65%";
+                dataCanvas.style.maxHeight = "65%";
+                dataCanvas.style.marginTop = "0px";
+            } else {
+                dataCanvas.style.height = "48%";
+                dataCanvas.style.maxHeight = "48%";
+                dataCanvas.style.marginTop = "-10px";
+            }
+        }
 
         // Utility function to pad strings with spaces
         function padLeftWithSpaces(str, targetLength) {
@@ -308,8 +310,8 @@ if (TestMode === 'true') {
 
             // Event listener for button click
             FMDXButton.addEventListener("click", function () {
-				const data = previousDataByFrequency[currentFrequency];
-				const station = data ? data.station : '';
+                const data = previousDataByFrequency[currentFrequency];
+                const station = data ? data.station : '';
                 if (id) {
                     // Check if the popup window is already open
                     if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
@@ -322,11 +324,11 @@ if (TestMode === 'true') {
                         isOpenFMDX = true;
                     }
                 } else {
-					if (station === '') { 
-						alert("Please be patient! The station is not yet fully identified.");
-					} else { 				
-						alert("No Station ID found or Proxy Server is down!");
-					}			                
+                    if (station === '') { 
+                        alert("Please be patient! The station is not yet fully identified.");
+                    } else {                 
+                        alert("No Station ID found or Proxy Server is down!");
+                    }               
                 }
             });
 
@@ -370,8 +372,8 @@ if (TestMode === 'true') {
 
             // Event listener for button click
             FMLISTButton.addEventListener("click", function () {
-				const data = previousDataByFrequency[currentFrequency];
-				const station = data ? data.station : '';
+                const data = previousDataByFrequency[currentFrequency];
+                const station = data ? data.station : '';
                 if (FMLIST_OM_ID) {
                     if (id) {
                         // Check if the popup window is already open
@@ -387,10 +389,10 @@ if (TestMode === 'true') {
                         }
                     } else {
                         if (station === '') { 
-							alert("Please be patient! The station is not yet fully identified.");
-						} else { 				
-							alert("No Station ID found or Proxy Server is down!");
-						}	
+                            alert("Please be patient! The station is not yet fully identified.");
+                        } else {                 
+                            alert("No Station ID found or Proxy Server is down!");
+                        }   
                     }
                 }
             });
@@ -430,7 +432,7 @@ if (TestMode === 'true') {
                 return entryFrequency === currentFrequency &&
                        entryPicode === picode &&
                        entryStation === station &&
-                       entryCity === city;	
+                       entryCity === city; 
             });
 
             if (exists) {
@@ -451,9 +453,9 @@ if (TestMode === 'true') {
             if (currentFrequency !== previousFrequency) {
                 previousFrequency = currentFrequency;
                 NewLine = 'true';
-				id = '';
+                id = '';
             }
-			
+            
             const now = new Date();
             const date = formatDate(now);
             const time = formatTime(now);
@@ -463,29 +465,29 @@ if (TestMode === 'true') {
             const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
 
             if ((data && data.picode.length > 1 && TestMode !== 'true') || (TestMode === 'true' && currentFrequency === test_frequency)) {
-				
-				let station = "";
-				let city = "";
-				let itu = "";
-				let pol = "";
-				let erpTxt = "";
-				let distance = "";
-				let azimuth = "";
-				let picode = "";
-				let ps = "";
-					
+                
+                let station = "";
+                let city = "";
+                let itu = "";
+                let pol = "";
+                let erpTxt = "";
+                let distance = "";
+                let azimuth = "";
+                let picode = "";
+                let ps = "";
+                    
        if (TestMode === 'true' && currentFrequency === test_frequency) {   
-	   
-			station = Screen === 'ultrasmall'
-			? truncateString(padRightWithSpaces(test_station, 19), 19)
-			: Screen === 'small'
-				? truncateString(padRightWithSpaces(test_station, 23), 23)
-				: truncateString(padRightWithSpaces(test_station, 25), 25);               
-			city = Screen === 'ultrasmall'
-			? truncateString(padRightWithSpaces(test_city, 15), 15)
-			: Screen === 'small'
-				? truncateString(padRightWithSpaces(test_city, 19), 19)
-				: truncateString(padRightWithSpaces(test_city, 21), 21);
+       
+            station = Screen === 'ultrasmall'
+            ? truncateString(padRightWithSpaces(test_station, 19), 19)
+            : Screen === 'small'
+                ? truncateString(padRightWithSpaces(test_station, 23), 23)
+                : truncateString(padRightWithSpaces(test_station, 25), 25);               
+            city = Screen === 'ultrasmall'
+            ? truncateString(padRightWithSpaces(test_city, 15), 15)
+            : Screen === 'small'
+                ? truncateString(padRightWithSpaces(test_city, 19), 19)
+                : truncateString(padRightWithSpaces(test_city, 21), 21);
             itu = truncateString(padLeftWithSpaces(test_itu, 3), 3);
             pol = truncateString(test_pol, 1);
             erpTxt = truncateString(padLeftWithSpaces(String(test_erp), 6), 6);
@@ -494,16 +496,16 @@ if (TestMode === 'true') {
             picode = truncateString(padRightWithSpaces(test_picode, 7), 7);
             ps = truncateString(padRightWithSpaces(test_ps.replace(/ /g, "_"), 9), 9);
         } else {
- 			station = Screen === 'ultrasmall'
-			? truncateString(padRightWithSpaces(data.station, 19), 19)
-			: Screen === 'small'
-				? truncateString(padRightWithSpaces(data.station, 23), 23)
-				: truncateString(padRightWithSpaces(data.station, 25), 25);               
-			city = Screen === 'ultrasmall'
-			? truncateString(padRightWithSpaces(data.city, 15), 15)
-			: Screen === 'small'
-				? truncateString(padRightWithSpaces(data.city, 19), 19)
-				: truncateString(padRightWithSpaces(data.city, 21), 21);
+            station = Screen === 'ultrasmall'
+            ? truncateString(padRightWithSpaces(data.station, 19), 19)
+            : Screen === 'small'
+                ? truncateString(padRightWithSpaces(data.station, 23), 23)
+                : truncateString(padRightWithSpaces(data.station, 25), 25);               
+            city = Screen === 'ultrasmall'
+            ? truncateString(padRightWithSpaces(data.city, 15), 15)
+            : Screen === 'small'
+                ? truncateString(padRightWithSpaces(data.city, 19), 19)
+                : truncateString(padRightWithSpaces(data.city, 21), 21);
             itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
             pol = truncateString(data.pol, 1);
             erpTxt = truncateString(padLeftWithSpaces(String(data.erp), 6), 6);
@@ -512,8 +514,8 @@ if (TestMode === 'true') {
             picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
             ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
 
-		}
-				const outputText = station 
+        }
+                const outputText = station 
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
@@ -522,24 +524,24 @@ if (TestMode === 'true') {
                     : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
 
                 if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
-					  if (data.station && loopCounter === 0) {
+                      if (data.station && loopCounter === 0) {
 
-							if (TestMode === 'true' && currentFrequency === test_frequency) {   
-								id = await getidValue(currentFrequency, test_picode, test_itu, test_city);
-							} else {
-								id = await getidValue(currentFrequency, data.picode, data.itu, data.city);
-							}
-								if (id === undefined) {
-								let id = '';
-							}
-							if (id && !idAll.split(',').includes(id)) {
-								idAll += idAll ? `,${id}` : id;
-							}
-							
-							loopCounter = 1;
+                            if (TestMode === 'true' && currentFrequency === test_frequency) {   
+                                id = await getidValue(currentFrequency, test_picode, test_itu, test_city);
+                            } else {
+                                id = await getidValue(currentFrequency, data.picode, data.itu, data.city);
+                            }
+                                if (id === undefined) {
+                                let id = '';
+                            }
+                            if (id && !idAll.split(',').includes(id)) {
+                                idAll += idAll ? `,${id}` : id;
+                            }
+                            
+                            loopCounter = 1;
                     }
-									
-                    if (NewLine === 'true') {
+                                
+                    if ((NewLine === 'true' && SaveFrequency !== currentFrequencyWithSpaces.replace(/\s/g, '') && Savepicode !== picode.replace(/[?\s]/g, '')) || (SaveFrequency === currentFrequencyWithSpaces.replace(/\s/g, '') && Savestation !== station && station !== '' && Savepicode !== picode.replace(/[?\s]/g, '') && NewLine !== 'true')) {
 
                         const newOutputDiv = document.createElement("div");
                         newOutputDiv.style.whiteSpace = "pre-wrap";
@@ -549,40 +551,44 @@ if (TestMode === 'true') {
                         if (dataCanvas instanceof Node) {
                             dataCanvas.appendChild(newOutputDiv);
                         }
-						logDataArray.push(newOutputDiv);	
-						scrollCounter = 0;				
-						NewLine = 'false';	
+                        logDataArray.push(newOutputDiv);    
+                        scrollCounter = 0;                
+                        NewLine = 'false'; 
+                        SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
+                        Savepicode = picode.replace(/[?\s]/g, '');
+                        Savestation = station;
+                        
                     } else {
-						
-                        if (dataCanvas && dataCanvas.lastChild) {																	
+                        
+                        if (dataCanvas && dataCanvas.lastChild) {                                                                   
                             if (FilterState) { 
-                                if (!data.picode.includes('?') && data.station) {								
+                                if (!data.picode.includes('?') && data.station) {                                
                                     const lastOutputDiv = dataCanvas.lastChild;
-                                    lastOutputDiv.textContent = outputText;	
-									if (scrollCounter === 0) {
-										dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
-										scrollCounter = 1;
-									}	
-									if (id === '') {	
-										loopCounter = 0;
-									}
-									outputArray += ` | ${id}`;
-									logDataArray[logDataArray.length -1] = outputArray;
+                                    lastOutputDiv.textContent = outputText;   
+                                    if (scrollCounter === 0) {
+                                        dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+                                        scrollCounter = 1;
+                                    }   
+                                    if (id === '') {  
+                                        loopCounter = 0;
+                                    }
+                                    outputArray += ` | ${id}`;
+                                    logDataArray[logDataArray.length -1] = outputArray;
 
 
-									
-                                }						
+                                    
+                                }                       
                             } else {
-	                            const lastOutputDiv = dataCanvas.lastChild;
+                                const lastOutputDiv = dataCanvas.lastChild;
                                 lastOutputDiv.textContent = outputText;
-								if (scrollCounter === 0) {
-									dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
-									scrollCounter = 1;
-								}			
-								if (id === '') {	
-									loopCounter = 0;
-								}															
-								outputArray += ` | ${id}`;
+                                if (scrollCounter === 0) {
+                                    dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+                                    scrollCounter = 1;
+                                }           
+                                if (id === '') {  
+                                    loopCounter = 0;
+                                }                                                               
+                                outputArray += ` | ${id}`;
                                 logDataArray[logDataArray.length -1] = outputArray;
                             }
                         }
@@ -610,12 +616,12 @@ if (TestMode === 'true') {
                 LoggerButton.classList.add('bg-color-4');
                 coverTuneButtonsPanel(true); // Cover when logger is on
                 displaySignalOutput();
-				
-				// Delayed call to set the initial height
-				setTimeout(adjustDataCanvasHeight, 100);
-				// Optionally, add an event listener to adjust the height dynamically if the container's size changes
-				window.addEventListener('resize', adjustDataCanvasHeight);	
-				
+                
+                // Delayed call to set the initial height
+                setTimeout(adjustDataCanvasHeight, 100);
+                // Optionally, add an event listener to adjust the height dynamically if the container's size changes
+                window.addEventListener('resize', adjustDataCanvasHeight);   
+                
                 // Show the download buttons
                 if (downloadButtonsContainer) {
                     downloadButtonsContainer.style.display = 'flex';
@@ -952,46 +958,46 @@ if (TestMode === 'true') {
             checkBlacklistFileExistence(); // Check blacklist file existence on page load
         }
 
-// Initialize the logger button
-function initializeLoggerButton() {
-    setupWebSocket();
+        // Initialize the logger button
+        function initializeLoggerButton() {
+            setupWebSocket();
 
-    // Ensure download buttons are initially hidden
-    const LoggerButton = document.createElement('button');
-    LoggerButton.classList.add('hide-phone');
-    LoggerButton.id = 'Log-on-off';
-    LoggerButton.setAttribute('aria-label', 'Scan');
-    LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
-    LoggerButton.style.borderRadius = '0px';
-    LoggerButton.style.width = '100px';
-    LoggerButton.style.position = 'relative';
-    LoggerButton.style.marginTop = '16px';
-    LoggerButton.style.right = '0px';
-    LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
-    LoggerButton.classList.add('bg-color-2');
-    LoggerButton.title = `Plugin Version: ${plugin_version}`; // Add title attribute for mouseover effect
+            // Ensure download buttons are initially hidden
+            const LoggerButton = document.createElement('button');
+            LoggerButton.classList.add('hide-phone');
+            LoggerButton.id = 'Log-on-off';
+            LoggerButton.setAttribute('aria-label', 'Scan');
+            LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
+            LoggerButton.style.borderRadius = '0px';
+            LoggerButton.style.width = '100px';
+            LoggerButton.style.position = 'relative';
+            LoggerButton.style.marginTop = '16px';
+            LoggerButton.style.right = '0px';
+            LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
+            LoggerButton.classList.add('bg-color-2');
+            LoggerButton.title = `Plugin Version: ${plugin_version}`; // Add title attribute for mouseover effect
 
-    const wrapperElement = document.querySelector('.tuner-info');
-    if (wrapperElement) {
-        const buttonWrapper = document.createElement('div');
-        buttonWrapper.classList.add('button-wrapper');
-        buttonWrapper.appendChild(LoggerButton);
-        wrapperElement.appendChild(buttonWrapper);
+            const wrapperElement = document.querySelector('.tuner-info');
+            if (wrapperElement) {
+                const buttonWrapper = document.createElement('div');
+                buttonWrapper.classList.add('button-wrapper');
+                buttonWrapper.appendChild(LoggerButton);
+                wrapperElement.appendChild(buttonWrapper);
 
-        // Add empty line after the button
-        const emptyLine = document.createElement('br');
-        wrapperElement.appendChild(emptyLine);
-    }
+                // Add empty line after the button
+                const emptyLine = document.createElement('br');
+                wrapperElement.appendChild(emptyLine);
+            }
 
-    LoggerButton.addEventListener('click', toggleLogger);
-    displaySignalCanvas();
-}
+            LoggerButton.addEventListener('click', toggleLogger);
+            displaySignalCanvas();
+        }
 
-// Initialize on window load
-window.onload = function () {
-    initializeLoggerButton();
-    checkBlacklist();
-};
+        // Initialize on window load
+        window.onload = function () {
+            initializeLoggerButton();
+            checkBlacklist();
+        };
 
         // Initialize on window load
         window.onload = function () {
@@ -1017,242 +1023,208 @@ window.onload = function () {
             });
         }
 
-function downloadDataCSV() {
-    const now = new Date();
-    const currentDate = formatDate(now);
-    const currentTime = formatTime(now);
-    const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
+        function downloadDataCSV() {
+            const now = new Date();
+            const currentDate = formatDate(now);
+            const currentTime = formatTime(now);
+            const FilterState = getFilterStateFromCookie().state;
 
-    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
 
-    let allData;
-    let sortedLogDataArray = [...logDataArray];
+            let allData;
+            let sortedLogDataArray = [...logDataArray];
 
-    try {
-			if (FilterState) {
-				// Sort the copied array by frequency and cleanedPi
-				sortedLogDataArray.sort((a, b) => {
-					// Ensure 'a' and 'b' are valid strings
-					if (typeof a !== 'string' || typeof b !== 'string') {
-						console.error('Invalid data format in sortedLogDataArray:', a, b);
-						return 0; // Return no change if elements are not strings
-				}
+            try {
+                // Sort the entire array by frequency
+                sortedLogDataArray.sort((a, b) => {
+                    const freqA = parseFloat(a.split('|')[2]?.trim());
+                    const freqB = parseFloat(b.split('|')[2]?.trim());
+                    return freqA - freqB;
+                });
 
-					const freqA = parseFloat(a.split('|')[2]?.trim());
-					const freqB = parseFloat(b.split('|')[2]?.trim());
-					const piA = a.split('|')[3]?.trim().replace('?', '');
-					const piB = b.split('|')[3]?.trim().replace('?', '');
+                if (FilterState) {
+                    allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
 
-					return freqA - freqB || piA.localeCompare(piB);
-				});
+                    // Filter the log data to remove duplicates
+                    let previousRecord = null;
+                    const filteredLogDataArray = [];
 
-
-            allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
-
-            // Initialize the previous record for comparison
-            let previousRecord = null;
-            const filteredLogDataArray = [];
-
-            sortedLogDataArray.forEach(line => {
-                // Ensure each line is a string
-                if (typeof line !== 'string') {
-                    console.error('Invalid data format in sortedLogDataArray:', line);
-                    return;
-                }
-
-                const parts = line.split('|');
-                if (parts.length < 4) {
-                    console.error('Invalid line format:', line);
-                    return;
-                }
-
-                const [date, time, freq, pi, ps, name, city, ...rest] = parts.map(value => value.trim());
-                const cleanedPi = pi.replace('?', '');
-
-                if (previousRecord) {
-                    const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
-
-                    if (freq === prevFreq && cleanedPi === prevPi) {
-                        if (name === prevName && city === prevCity) {
-                            // Skip the current record
-                            return;
-                        } else if (prevName === "" && prevCity === "") {
-                            // Replace the previous record
-                            previousRecord = [freq, cleanedPi, name, city];
-                            filteredLogDataArray[filteredLogDataArray.length - 1] = `${date}|${time}|${freq}|${pi}|${ps}|${name}|${city}|${rest.join('|')}`;
-                            return;
-                        } else {
-                            // Skip the current record
+                    sortedLogDataArray.forEach(line => {
+                        const parts = line.split('|');
+                        if (parts.length < 4) {
+                            console.error('Invalid line format:', line);
                             return;
                         }
-                    }
+
+                        const [date, time, freq, pi, ps, name, city, ...rest] = parts.map(value => value.trim());
+                        const cleanedPi = pi.replace('?', '');
+
+                        if (previousRecord) {
+                            const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+
+                            if (freq === prevFreq && cleanedPi === prevPi) {
+                                if (name === prevName && city === prevCity) {
+                                    return;
+                                } else if (prevName === "" && prevCity === "") {
+                                    previousRecord = [freq, cleanedPi, name, city];
+                                    filteredLogDataArray[filteredLogDataArray.length - 1] = `${date}|${time}|${freq}|${pi}|${ps}|${name}|${city}|${rest.join('|')}`;
+                                    return;
+                                } else {
+                                    return;
+                                }
+                            }
+                        }
+
+                        previousRecord = [freq, cleanedPi, name, city];
+                        filteredLogDataArray.push(line);
+                    });
+
+                    sortedLogDataArray = filteredLogDataArray;
+                } else {
+                    allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n`;
                 }
 
-                previousRecord = [freq, cleanedPi, name, city];
-                filteredLogDataArray.push(line);
-            });
+                allData += sortedLogDataArray.map(line => {
+                    const parts = line.split('|');
+                    const [date, time, ...rest] = parts.map(value => value.trim());
+                    return FilterState ? `${rest.join(';')};${date};${time}` : line.replaceAll(/\s*\|\s*/g, ";");
+                }).join('\n');
 
-            sortedLogDataArray = filteredLogDataArray;
-        } else {
-            console.log(FilterState);
-            allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n`;
+                const blob = new Blob([allData], { type: "text/plain" });
+
+                if (window.navigator.msSaveOrOpenBlob) {
+                    window.navigator.msSaveOrOpenBlob(blob, filename);
+                } else {
+                    const link = document.createElement("a");
+                    link.href = window.URL.createObjectURL(blob);
+                    link.download = filename;
+                    link.click();
+                    window.URL.revokeObjectURL(link.href);
+                }
+            } catch (error) {
+                console.error('Error in downloadDataCSV:', error);
+            }
         }
 
-        allData += sortedLogDataArray.map(line => {
-            if (typeof line !== 'string') {
-                console.error('Invalid data format in sortedLogDataArray:', line);
-                return '';
-            }
-
-            const parts = line.split('|');
-            if (parts.length < 2) {
-                console.error('Invalid line format:', line);
-                return '';
-            }
-
-            const [date, time, ...rest] = parts.map(value => value.trim());
-
-            if (FilterState) {
-                return `${rest.join(';')};${date};${time}`;
-            } else {
-                return line.replaceAll(/\s*\|\s*/g, ";");
-            }
-        }).join('\n');
-
-        const blob = new Blob([allData], { type: "text/plain" });
-
-        if (window.navigator.msSaveOrOpenBlob) {
-            window.navigator.msSaveOrOpenBlob(blob, filename);
-        } else {
-            const link = document.createElement("a");
-            link.href = window.URL.createObjectURL(blob);
-            link.download = filename;
-            link.click();
-            window.URL.revokeObjectURL(link.href);
-        }
-    } catch (error) {
-        console.error('Error in downloadDataCSV:', error);
-    }
-}
 
         // Cache for API responses
         const apiCache = {};
 
-async function downloadDataHTML() {
-    const now = new Date();
-    const currentDate = formatDate(now);
-    const currentTime = formatTime(now);
-    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
+        async function downloadDataHTML() {
+            const now = new Date();
+            const currentDate = formatDate(now);
+            const currentTime = formatTime(now);
+            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
 
-    const filterState = getFilterStateFromCookie().state;
+            const filterState = getFilterStateFromCookie().state;
 
-    let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
-    allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
+            let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
+            allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
 
-    if (filterState) {
-        allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
-    } else {
-        allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
-    }
+            if (filterState) {
+                allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
+            } else {
+                allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
+            }
 
-    let sortedLogDataArray = [...logDataArray];
+            let sortedLogDataArray = [...logDataArray];
 
-    if (filterState) {
-    // Sortiere das Array nach Frequenz zuerst
-    sortedLogDataArray.sort((a, b) => {
-        // Check if a and b are valid strings before splitting
-        if (typeof a !== 'string' || typeof b !== 'string') {
-            return 0; // No change in order if a or b is not a string
-        }
+            if (filterState) {
+                // Sort the array by frequency first
+                sortedLogDataArray.sort((a, b) => {
+                    // Check if a and b are valid strings before splitting
+                    if (typeof a !== 'string' || typeof b !== 'string') {
+                        return 0; // No change in order if a or b is not a string
+                    }
 
-        const partsA = a.split('|');
-        const partsB = b.split('|');
+                    const partsA = a.split('|');
+                    const partsB = b.split('|');
 
-        if (partsA.length < 4 || partsB.length < 4) {
-            return 0; // No change in order if split doesn't produce expected parts
-        }
+                    if (partsA.length < 4 || partsB.length < 4) {
+                        return 0; // No change in order if split doesn't produce expected parts
+                    }
 
-        const [dateA, timeA, freqA, piA] = partsA.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
-        const [dateB, timeB, freqB, piB] = partsB.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+                    const [dateA, timeA, freqA, piA] = partsA.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
+                    const [dateB, timeB, freqB, piB] = partsB.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
 
-        return freqA - freqB;
-    });
+                    return freqA - freqB;
+                });
 
-    // Filter duplicates based on frequency and PI
-    let previousRecord = null;
-    const filteredLogDataArray = [];
+                // Filter duplicates based on frequency and PI
+                let previousRecord = null;
+                const filteredLogDataArray = [];
 
-    sortedLogDataArray.forEach(line => {
-        if (typeof line !== 'string') {
-            console.error(`Invalid line found: ${line}`);
-            return; // Skip this iteration if line is not a string
-        }
+                sortedLogDataArray.forEach(line => {
+                    if (typeof line !== 'string') {
+                        console.error(`Invalid line found: ${line}`);
+                        return; // Skip this iteration if line is not a string
+                    }
 
-        let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-        const cleanedPi = pi.replace('?', '');
+                    let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+                    const cleanedPi = pi.replace('?', '');
 
-        if (previousRecord) {
-            const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+                    if (previousRecord) {
+                        const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
 
-            if (freq === prevFreq && cleanedPi === prevPi) {
-                if (name === prevName && city === prevCity) {
-                    // Skip the current record
-                    return;
-                } else if (prevName === "" && prevCity === "") {
-                    // Replace the previous record
+                        if (freq === prevFreq && cleanedPi === prevPi) {
+                            if (name === prevName && city === prevCity) {
+                                // Skip the current record
+                                return;
+                            } else if (prevName === "" && prevCity === "") {
+                                // Replace the previous record
+                                previousRecord = [freq, cleanedPi, name, city];
+                                filteredLogDataArray[filteredLogDataArray.length - 1] = line;
+                                return;
+                            } else {
+                                // Skip the current record
+                                return;
+                            }
+                        }
+                    }
+
                     previousRecord = [freq, cleanedPi, name, city];
-                    filteredLogDataArray[filteredLogDataArray.length - 1] = line;
-                    return;
-                } else {
-                    // Skip the current record
-                    return;
+                    filteredLogDataArray.push(line);
+                });
+
+                // Assign filtered array back to sortedLogDataArray
+                sortedLogDataArray = filteredLogDataArray;
+            }
+
+            sortedLogDataArray.forEach(line => {
+                if (typeof line !== 'string') {
+                    console.error(`Invalid line found: ${line}`);
+                    return; // Skip this iteration if line is not a string
                 }
+
+                let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+
+                let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
+                let link2 = id !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
+
+                if (filterState) {
+                    allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
+                } else {
+                    allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
+                }
+            });
+
+            let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
+            allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
+
+            const blob = new Blob([allData], { type: "text/html" });
+
+            if (window.navigator.msSaveOrOpenBlob) {
+                // For IE browser
+                window.navigator.msSaveOrOpenBlob(blob, filename);
+            } else {
+                // For other browsers
+                const link = document.createElement("a");
+                link.href = window.URL.createObjectURL(blob);
+                link.download = filename;
+                link.click();
+                window.URL.revokeObjectURL(link.href);
             }
         }
-
-        previousRecord = [freq, cleanedPi, name, city];
-        filteredLogDataArray.push(line);
-    });
-
-    // Assign filtered array back to sortedLogDataArray
-    sortedLogDataArray = filteredLogDataArray;
-}
-
-    sortedLogDataArray.forEach(line => {
-        if (typeof line !== 'string') {
-            console.error(`Invalid line found: ${line}`);
-            return; // Skip this iteration if line is not a string
-        }
-
-        let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-
-        let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
-        let link2 = id !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
-
-        if (filterState) {
-            allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-        } else {
-            allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-        }
-    });
-
-    let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
-    allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
-
-    const blob = new Blob([allData], { type: "text/html" });
-
-    if (window.navigator.msSaveOrOpenBlob) {
-        // For IE browser
-        window.navigator.msSaveOrOpenBlob(blob, filename);
-    } else {
-        // For other browsers
-        const link = document.createElement("a");
-        link.href = window.URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-        window.URL.revokeObjectURL(link.href);
-    }
-}
 
         // Get ID value from API
         async function getidValue(currentFrequency, picode, itu, city) {
