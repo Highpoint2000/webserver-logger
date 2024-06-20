@@ -2,9 +2,8 @@
 
 ![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/9f2481cf-5072-4bce-9908-261f022e67b9)
 
-## Version 1.3c
+## Version 1.3d
 
-- Layout adjustment for smaller screens
 - Logging optimizations
 
 ## Installation notes:
@@ -23,6 +22,11 @@ If the logging plugin is activated, logging in the background will automatically
 (*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
 
 ## History: 
+
+## Version 1.3c
+
+- Layout adjustment for smaller screens
+- Logging optimizations
 
 ### Version 1.3b
 
