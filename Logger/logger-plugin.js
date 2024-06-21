@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3d)       ///
 ///                                                      ///
-///  by Highpoint                last update: 20.06.24   ///
+///  by Highpoint                last update: 21.06.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -11,7 +11,7 @@
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3d'; // Plugin Version
+const plugin_version = 'V1.3c'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -541,7 +541,7 @@ if (TestMode === 'true') {
                             loopCounter = 1;
                     }
                                 
-                    if ((NewLine === 'true' && SaveFrequency !== currentFrequencyWithSpaces.replace(/\s/g, '') && Savepicode !== picode.replace(/[?\s]/g, '')) || (SaveFrequency === currentFrequencyWithSpaces.replace(/\s/g, '') && Savestation !== station && station !== '' && Savepicode !== picode.replace(/[?\s]/g, '') && NewLine !== 'true')) {
+                    if ((NewLine === 'true') || (SaveFrequency === currentFrequencyWithSpaces.replace(/\s/g, '') && Savestation !== station && station !== '' && Savepicode !== picode.replace(/[?\s]/g, '') && NewLine !== 'true')) {
 
                         const newOutputDiv = document.createElement("div");
                         newOutputDiv.style.whiteSpace = "pre-wrap";
