@@ -1,17 +1,19 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3d)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3e)       ///
 ///                                                      ///
-///  by Highpoint                last update: 21.06.24   ///
+///  by Highpoint                last update: 16.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
 ////////////////////////////////////////////////////////////
 
+///  This plugin only works from web server version 1.2.3!!!
+
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3d'; // Plugin Version
+const plugin_version = 'V1.3e'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -47,7 +49,6 @@ if (TestMode === 'true') {
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
-        const wsUrl = `${protocol}//${host}/text`;
         let displayedPiCodes = [];
         let logDataArray = [];
         const previousDataByFrequency = {};
@@ -71,27 +72,39 @@ if (TestMode === 'true') {
         console.log('ServerName:', ServerName);
         console.log('ServerDescription:', ServerDescription);
 
-        // Setup WebSocket connection
-        function setupWebSocket() {
-            if (!autoScanSocket || autoScanSocket.readyState === WebSocket.CLOSED) {
-                autoScanSocket = new WebSocket(wsUrl);
+		// Setup WebSocket connection
+		async function setupWebSocket() {
+		if (!autoScanSocket || autoScanSocket.readyState === WebSocket.CLOSED) {
+			try {
+				autoScanSocket = await window.socketPromise;
 
-                autoScanSocket.addEventListener("open", () => {
-                    console.log("WebSocket connected.");
-                });
+				autoScanSocket.addEventListener("open", () => {
+					console.log("WebSocket connected.");
+				});
 
-                autoScanSocket.addEventListener("message", handleWebSocketMessage);
+				autoScanSocket.addEventListener("message", handleWebSocketMessage);
 
-                autoScanSocket.addEventListener("error", (error) => {
-                    console.error("WebSocket error:", error);
-                });
+				autoScanSocket.addEventListener("error", (error) => {
+					console.error("WebSocket error:", error);
+				});
 
-                // Ping server to keep the connection alive
-                setInterval(() => {
-                    autoScanSocket.send(JSON.stringify({ action: "ping" }));
-                }, 250);
-            }
-        }
+				autoScanSocket.addEventListener("close", (event) => {
+					console.log("WebSocket closed:", event);
+					// Optionally, attempt to reconnect after a delay
+					setTimeout(setupWebSocket, 5000);
+				});
+
+				// Ping server to keep the connection alive
+				setInterval(() => {
+					if (autoScanSocket.readyState === WebSocket.OPEN) {
+						autoScanSocket.send(JSON.stringify({ action: "ping" }));
+						}
+					}, 250);
+				} catch (error) {
+					console.error("Failed to setup WebSocket:", error);
+				}
+			}
+		}
 
         const LAT = localStorage.getItem('qthLatitude');
         const LON = localStorage.getItem('qthLongitude');
