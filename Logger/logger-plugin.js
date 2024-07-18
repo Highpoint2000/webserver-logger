@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3f BETA)  ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3f)       ///
 ///                                                      ///
 ///  by Highpoint                last update: 18.07.24   ///
 ///                                                      ///
@@ -13,7 +13,7 @@
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3f BETA'; // Plugin Version
+const plugin_version = 'V1.3f'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
