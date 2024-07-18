@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3e)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3f BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 16.07.24   ///
+///  by Highpoint                last update: 18.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -13,7 +13,7 @@
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3e'; // Plugin Version
+const plugin_version = 'V1.3f BETA'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -94,12 +94,6 @@ if (TestMode === 'true') {
 					setTimeout(setupWebSocket, 5000);
 				});
 
-				// Ping server to keep the connection alive
-				setInterval(() => {
-					if (autoScanSocket.readyState === WebSocket.OPEN) {
-						autoScanSocket.send(JSON.stringify({ action: "ping" }));
-						}
-					}, 250);
 				} catch (error) {
 					console.error("Failed to setup WebSocket:", error);
 				}
@@ -303,50 +297,67 @@ if (TestMode === 'true') {
             }
         }
 
-        // Variable to track the window state
-        let FMDXWindow = null;
-        let isOpenFMDX = false;
+		// Variable to track the window state
+		let FMDXWindow = null;
+		let isOpenFMDX = false;
 
-        // Function to create the FMDX button and link it to the overlay
-        function createFMDXButton() {
-            // Create the button
-            const FMDXButton = document.createElement("button");
-            FMDXButton.textContent = "FMDX";
-            FMDXButton.style.width = "80px";
-            FMDXButton.style.height = "20px";
-            FMDXButton.style.marginRight = "-145%";
-            FMDXButton.style.marginLeft = "-40px";
-            FMDXButton.style.display = "flex";
-            FMDXButton.style.alignItems = "center";
-            FMDXButton.style.justifyContent = "center";
-            FMDXButton.style.borderRadius = '0px';
+		// Function to create the FMDX button and link it to the overlay
+		function createFMDXButton() {
+			// Create the button
+			const FMDXButton = document.createElement("button");
+			FMDXButton.textContent = "FMDX";
+			FMDXButton.style.width = "80px";
+			FMDXButton.style.height = "20px";
+			FMDXButton.style.marginRight = "-145%";
+			FMDXButton.style.marginLeft = "-40px";
+			FMDXButton.style.display = "flex";
+			FMDXButton.style.alignItems = "center";
+			FMDXButton.style.justifyContent = "center";
+			FMDXButton.style.borderRadius = '0px';
 
-            // Event listener for button click
-            FMDXButton.addEventListener("click", function () {
-                const data = previousDataByFrequency[currentFrequency];
-                const station = data ? data.station : '';
-                if (id) {
-                    // Check if the popup window is already open
-                    if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
-                        // Close if already open
-                        FMDXWindow.close();
-                        isOpenFMDX = false;
-                    } else {
-                        // Open if not already open
-                        openFMDXPage();
-                        isOpenFMDX = true;
-                    }
-                } else {
-                    if (station === '') { 
-                        alert("Please be patient! The station is not yet fully identified.");
-                    } else {                 
-                        alert("No Station ID found or Proxy Server is down!");
-                    }               
-                }
-            });
+			// Function to update the button's class based on station
+			function updateFMDXButtonClass() {
+				const data = previousDataByFrequency[currentFrequency];
+				const station = data ? data.station : '';
+        
+			if (station === '') {
+					FMDXButton.classList.remove('bg-color-4');
+					FMDXButton.classList.add('bg-color-2');
+					FMDXButton.classList.remove('active'); 
+					FMDXButton.classList.add('inactive'); 
+					FMDXButton.disabled = true;
+				} else {
+					FMDXButton.classList.remove('bg-color-2');
+					FMDXButton.classList.add('bg-color-4');
+					FMDXButton.classList.remove('inactive'); 
+					FMDXButton.classList.add('active'); 
+					FMDXButton.disabled = false;
+				}
+			}
 
-            return FMDXButton;
-        }
+			// Event listener for button click
+			FMDXButton.addEventListener("click", function () {
+				const data = previousDataByFrequency[currentFrequency];
+				const station = data ? data.station : '';
+				if (id) {
+					// Check if the popup window is already open
+					if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
+					// Close if already open
+						FMDXWindow.close();
+						isOpenFMDX = false;
+					} else {
+						// Open if not already open
+						openFMDXPage();
+						isOpenFMDX = true;
+					}
+				}
+			});
+
+			// Set an interval to continually check and update the button's class
+			setInterval(updateFMDXButtonClass, 100); // Check every 100 millisecond
+
+			return FMDXButton;
+		}
 
         // Function to open the FMDX link in a popup window
         function openFMDXPage() {
@@ -357,70 +368,87 @@ if (TestMode === 'true') {
             FMDXWindow = window.open(url, "_blank", "width=600,height=400"); // Adjust the window size as needed
         }
 
-        // Variable to track the window state
-        let FMLISTWindow = null;
-        let isOpenFMLIST = false;
+		// Variable to track the window state
+		let FMLISTWindow = null;
+		let isOpenFMLIST = false;
 
-        // Function to create the FMLIST button and link it to the overlay
-        function createFMLISTButton() {
-            // Create the button
-            const FMLISTButton = document.createElement("button");
-            FMLISTButton.textContent = "FMLIST";
-            FMLISTButton.style.width = "80px";
-            FMLISTButton.style.height = "20px";
-            FMLISTButton.style.marginRight = "-125px";
-            FMLISTButton.style.marginLeft = "-40px";
-            FMLISTButton.style.display = "flex";
-            FMLISTButton.style.alignItems = "center";
-            FMLISTButton.style.justifyContent = "center";
-            FMLISTButton.style.borderRadius = '0px';
+		// Function to create the FMLIST button and link it to the overlay
+		function createFMLISTButton() {
+			// Create a container for the button or placeholder
+			const container = document.createElement("div");
+			container.style.width = "80px";
+			container.style.height = "20px";
+			container.style.marginRight = "-125px";
+			container.style.marginLeft = "-40px";
+			container.style.display = "flex";
+			container.style.alignItems = "center";
+			container.style.justifyContent = "center";
+			container.style.borderRadius = '0px';
 
-            if (FMLIST_OM_ID) {
-                FMLISTButton.classList.add('bg-color-4');
-            } else {
-                FMLISTButton.classList.add('bg-color-2');
-                FMLISTButton.classList.add('inactive'); // Add class for inactivity
-                FMLISTButton.disabled = true; // Disable button if FMLIST_OM_ID has no value
-            }
+			// Check if FMLIST_OM_ID is not empty
+			if (FMLIST_OM_ID) {
+				// Create the button
+				const FMLISTButton = document.createElement("button");
+				FMLISTButton.textContent = "FMLIST";
+				FMLISTButton.style.width = "100%";
+				FMLISTButton.style.height = "100%";
+				FMLISTButton.style.borderRadius = '0px';
 
-            // Event listener for button click
-            FMLISTButton.addEventListener("click", function () {
-                const data = previousDataByFrequency[currentFrequency];
-                const station = data ? data.station : '';
-                if (FMLIST_OM_ID) {
-                    if (id) {
-                        // Check if the popup window is already open
-                        if (isOpenFMLIST && FMLISTWindow && !FMLISTWindow.closed) {
-                            // Close if already open
-                            FMLISTWindow.close();
-                            isOpenFMLIST = false;
-                        } else {
-                            // Open if not already open
-                            const data = previousDataByFrequency[currentFrequency];
-                            openFMLISTPage(data.distance, data.azimuth, data.itu);
-                            isOpenFMLIST = true;
-                        }
-                    } else {
-                        if (station === '') { 
-                            alert("Please be patient! The station is not yet fully identified.");
-                        } else {                 
-                            alert("No Station ID found or Proxy Server is down!");
-                        }   
-                    }
-                }
-            });
+				// Function to update the button's class based on station
+				function updateFMLISTButtonClass() {
+					const data = previousDataByFrequency[currentFrequency];
+					const station = data ? data.station : '';
 
-            return FMLISTButton;
-        }
+					if (station !== '' && FMLIST_OM_ID) {
+						FMLISTButton.classList.remove('bg-color-2');
+						FMLISTButton.classList.add('bg-color-4');
+						FMLISTButton.classList.remove('inactive'); 
+						FMLISTButton.classList.add('active'); 
+						FMLISTButton.disabled = false;
+					} else {
+						FMLISTButton.classList.remove('bg-color-4');
+						FMLISTButton.classList.add('bg-color-2');
+						FMLISTButton.classList.remove('active'); 
+						FMLISTButton.classList.add('inactive'); 
+						FMLISTButton.disabled = true;
+					}
+				}
 
-        // Function to open the FMLIST link in a popup window
-        function openFMLISTPage(distance, azimuth, itu) {
-            // URL for the website
-            const url = `https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}`;
+				// Eventlistener for button click
+				FMLISTButton.addEventListener("click", function () {
+					if (id) {
+						// Check if the popup window is already open
+						if (isOpenFMLIST && FMLISTWindow && !FMLISTWindow.closed) {
+							// Close if already open
+							FMLISTWindow.close();
+							isOpenFMLIST = false;
+						} else {
+							// Open if not already open
+							const data = previousDataByFrequency[currentFrequency];
+							openFMLISTPage(data.distance, data.azimuth, data.itu);
+							isOpenFMLIST = true;
+						}
+					}
+				});
 
-            // Open the link in a popup window
-            FMLISTWindow = window.open(url, "_blank", "width=800,height=820"); // Adjust the window size as needed
-        }
+				// Set an interval to continually check and update the button's class
+				setInterval(updateFMLISTButtonClass, 100); // Check every 100 milliseconds
+
+				// Add the button to the container
+				container.appendChild(FMLISTButton);
+			}
+
+			return container;
+		}
+
+		// Function to open the FMLIST link in a popup window
+		function openFMLISTPage(distance, azimuth, itu) {
+			// URL for the website
+			const url = `https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}`;
+
+			// Open the link in a popup window
+			FMLISTWindow = window.open(url, "_blank", "width=800,height=820"); // Adjust the window size as needed
+		}
 
         // Add CSS to remove hover effects for inactive buttons
         const style = document.createElement('style');
@@ -1251,7 +1279,7 @@ if (TestMode === 'true') {
                 }
 
                 const apiUrl = `https://maps.fmdx.pl/api/?freq=${modifiedFreq}&itu=${itu}`;
-                const corsAnywhereUrl = 'http://89.58.28.164:13128/';
+                const corsAnywhereUrl = 'https://cors-proxy.highpoint2000.synology.me:5001/';
                 const fetchPromise = fetch(`${corsAnywhereUrl}${apiUrl}`);
                 const timeoutPromise = new Promise((resolve, reject) => {
                     setTimeout(() => reject(new Error('Request timed out')), 2000);
