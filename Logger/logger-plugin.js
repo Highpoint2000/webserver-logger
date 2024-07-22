@@ -8,7 +8,7 @@
 ///                                                      ///
 ////////////////////////////////////////////////////////////
 
-///  This plugin only works from web server version 1.2.5!!!
+///  This plugin only works from web server version 1.2.3!!!
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
@@ -156,15 +156,16 @@ if (TestMode === 'true') {
         // Create the logging canvas and append it to the parent container
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
-		loggingCanvas.style.backgroundColor = "var(--color-1-transparent)";
-		loggingCanvas.style.height = "95%";
-		loggingCanvas.style.width = "96.5%";
-		loggingCanvas.style.border = "1px solid";
-		loggingCanvas.style.whiteSpace = "nowrap";
-		loggingCanvas.classList.add("panel-100", "br-0", "color-4");
+        loggingCanvas.style.height = "95%";
+        loggingCanvas.style.width = "96.5%";
         loggingCanvas.style.marginTop = "0px";
         loggingCanvas.style.marginRight = "20px";
         loggingCanvas.style.marginLeft = "20px";
+        loggingCanvas.style.display = 'none';
+        loggingCanvas.style.border = "1px solid ";
+        loggingCanvas.classList.add('color-4');
+		loggingCanvas.style.backgroundColor = "var(--color-1-transparent)";
+        loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
         parentContainer.appendChild(loggingCanvas);
 
         // Create a container for both titleDiv and dataCanvas
