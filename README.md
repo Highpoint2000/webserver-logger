@@ -1,6 +1,7 @@
 # RDS-Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/user-attachments/assets/cf5acb5d-9103-43cb-af11-fa5aae40e568)
+![image](https://github.com/user-attachments/assets/bb73d2f5-65f9-4d15-a39f-0a89f0d212c2)
+
 
 
 ## Version 1.3g (only works from web server version 1.2.5 - older versions must take the plugin version 1.3f !!!)
