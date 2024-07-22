@@ -1,19 +1,19 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3f)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3g)       ///
 ///                                                      ///
-///  by Highpoint                last update: 18.07.24   ///
+///  by Highpoint                last update: 22.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
 ////////////////////////////////////////////////////////////
 
-///  This plugin only works from web server version 1.2.3!!!
+///  This plugin only works from web server version 1.2.5!!!
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3f'; // Plugin Version
+const plugin_version = 'V1.3g'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -47,8 +47,6 @@ if (TestMode === 'true') {
 (() => {
     const loggerPlugin = (() => {
 
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
         let displayedPiCodes = [];
         let logDataArray = [];
         const previousDataByFrequency = {};
@@ -158,15 +156,15 @@ if (TestMode === 'true') {
         // Create the logging canvas and append it to the parent container
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
-        loggingCanvas.style.height = "95%";
-        loggingCanvas.style.width = "96.5%";
+		loggingCanvas.style.backgroundColor = "var(--color-1-transparent)";
+		loggingCanvas.style.height = "95%";
+		loggingCanvas.style.width = "96.5%";
+		loggingCanvas.style.border = "1px solid";
+		loggingCanvas.style.whiteSpace = "nowrap";
+		loggingCanvas.classList.add("panel-100", "br-0", "color-4");
         loggingCanvas.style.marginTop = "0px";
         loggingCanvas.style.marginRight = "20px";
         loggingCanvas.style.marginLeft = "20px";
-        loggingCanvas.style.display = 'none';
-        loggingCanvas.style.border = "1px solid ";
-        loggingCanvas.classList.add('color-4');
-        loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
         parentContainer.appendChild(loggingCanvas);
 
         // Create a container for both titleDiv and dataCanvas
@@ -1033,12 +1031,6 @@ if (TestMode === 'true') {
             LoggerButton.addEventListener('click', toggleLogger);
             displaySignalCanvas();
         }
-
-        // Initialize on window load
-        window.onload = function () {
-            initializeLoggerButton();
-            checkBlacklist();
-        };
 
         // Initialize on window load
         window.onload = function () {
