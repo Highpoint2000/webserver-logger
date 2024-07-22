@@ -1,12 +1,11 @@
 # RDS-Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/9f2481cf-5072-4bce-9908-261f022e67b9)
+![image](https://github.com/user-attachments/assets/cf5acb5d-9103-43cb-af11-fa5aae40e568)
 
-## Version 1.3f (only works from web server version 1.2.3 - older versions must take the plugin version 1.3d !!!)
 
-- HTTPS Support for internal CORS PROXY  
-- FMLIST Button is only visible if OM_ID is entered
-- FMLIST & FMDX Buttons light up when identification is successful
+## Version 1.3g (only works from web server version 1.2.5 - older versions must take the plugin version 1.3f !!!)
+
+- Design Update 
 
 ## Installation notes:
 
@@ -24,6 +23,12 @@ If the logging plugin is activated, logging in the background will automatically
 (*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
 
 ## History: 
+
+## Version 1.3f (only works from web server version 1.2.3 - older versions must take the plugin version 1.3d !!!)
+
+- HTTPS Support for internal CORS PROXY  
+- FMLIST Button is only visible if OM_ID is entered
+- FMLIST & FMDX Buttons light up when identification is successful
 
 ## Version 1.3e (only works from web server version 1.2.3!)
 
