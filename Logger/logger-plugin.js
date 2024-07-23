@@ -716,38 +716,53 @@ if (TestMode === 'true') {
             return DownloadButtonHTML;
         }
 
-        // Display signal canvas
-        function displaySignalCanvas() {
-            const loggingCanvas = document.getElementById('logging-canvas');
-            if (loggingCanvas) {
-                loggingCanvas.style.display = 'none';
+		// Display signal canvas
+		function displaySignalCanvas() {
+			const loggingCanvas = document.getElementById('logging-canvas');
+			if (loggingCanvas) {
+				loggingCanvas.style.display = 'none';
+			}
+			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
 				CanvasRotator.style.display = 'none';
+			}
+			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
 				backgroundRotator.style.display = 'none';
-            }
-            const signalCanvas = document.getElementById('signal-canvas');
-            if (signalCanvas) {
-                signalCanvas.style.display = 'block';
+			}
+			const signalCanvas = document.getElementById('signal-canvas');
+			if (signalCanvas) {
+				signalCanvas.style.display = 'block';
+			}
+			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
 				CanvasRotator.style.display = 'block';
-				backgroundRotator.style.display = 'block';
-				
-            }
-        }
+			}
+			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
+			backgroundRotator.style.display = 'block';
+			}
+		}
 
-        // Display signal output
-        function displaySignalOutput() {
-            const loggingCanvas = document.getElementById('logging-canvas');
-            if (loggingCanvas) {
-                loggingCanvas.style.display = 'block';
+		// Display signal output
+		function displaySignalOutput() {
+			const loggingCanvas = document.getElementById('logging-canvas');
+			if (loggingCanvas) {
+				loggingCanvas.style.display = 'block';
+			}
+			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
 				CanvasRotator.style.display = 'block';
+			}
+			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
 				backgroundRotator.style.display = 'block';
-            }
-            const signalCanvas = document.getElementById('signal-canvas');
-            if (signalCanvas) {
-                signalCanvas.style.display = 'none';
+			}
+			const signalCanvas = document.getElementById('signal-canvas');
+			if (signalCanvas) {
+				signalCanvas.style.display = 'none';
+			}
+			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
 				CanvasRotator.style.display = 'none';
+			}
+			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
 				backgroundRotator.style.display = 'none';
-            }
-        }
+			}
+		}
 
         // Format date as YYYY-MM-DD
         function formatDate(date) {
