@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3g)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3h)       ///
 ///                                                      ///
-///  by Highpoint                last update: 22.07.24   ///
+///  by Highpoint                last update: 23.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,10 +10,10 @@
 
 ///  This plugin only works from web server version 1.2.3!!!
 
-const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3g'; // Plugin Version
+const plugin_version = 'V1.3h'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -721,10 +721,15 @@ if (TestMode === 'true') {
             const loggingCanvas = document.getElementById('logging-canvas');
             if (loggingCanvas) {
                 loggingCanvas.style.display = 'none';
+				CanvasRotator.style.display = 'none';
+				backgroundRotator.style.display = 'none';
             }
             const signalCanvas = document.getElementById('signal-canvas');
             if (signalCanvas) {
                 signalCanvas.style.display = 'block';
+				CanvasRotator.style.display = 'block';
+				backgroundRotator.style.display = 'block';
+				
             }
         }
 
@@ -733,10 +738,14 @@ if (TestMode === 'true') {
             const loggingCanvas = document.getElementById('logging-canvas');
             if (loggingCanvas) {
                 loggingCanvas.style.display = 'block';
+				CanvasRotator.style.display = 'block';
+				backgroundRotator.style.display = 'block';
             }
             const signalCanvas = document.getElementById('signal-canvas');
             if (signalCanvas) {
                 signalCanvas.style.display = 'none';
+				CanvasRotator.style.display = 'none';
+				backgroundRotator.style.display = 'none';
             }
         }
 
