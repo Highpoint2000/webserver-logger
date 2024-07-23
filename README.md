@@ -4,7 +4,7 @@
 
 
 
-## Version 1.3h (only works with PSTRotator Plugin and web server from version 1.2.5 - older versions must take the plugin version 1.3g or 1.3f !!!)
+## Version 1.3h (only works from version 1.2.5 - older versions must take the plugin version 1.3f !!!)
 
 - Function Update für [PSTRotator Plugin](https://github.com/Highpoint2000/PSTRotator) 
 
