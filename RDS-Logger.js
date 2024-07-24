@@ -1,7 +1,7 @@
 // Plugin configuration, this is used in the administration when plugins are loaded
 var pluginConfig = {
     name: 'RDS-Logger Plugin',
-    version: '1.3h',
+    version: '1.3i',
     author: 'Highpoint',
     frontEndPath: 'Logger/logger-plugin.js'
 }
