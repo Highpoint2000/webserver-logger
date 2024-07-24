@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3h)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3i)       ///
 ///                                                      ///
-///  by Highpoint                last update: 23.07.24   ///
+///  by Highpoint                last update: 24.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,10 +10,10 @@
 
 ///  This plugin only works from web server version 1.2.3!!!
 
-const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3h'; // Plugin Version
+const plugin_version = 'V1.3i'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -45,6 +45,7 @@ if (TestMode === 'true') {
 
 // Immediately invoked function expression (IIFE) to encapsulate the loggerPlugin code
 (() => {
+	
     const loggerPlugin = (() => {
 
         let displayedPiCodes = [];
@@ -157,9 +158,9 @@ if (TestMode === 'true') {
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
         loggingCanvas.style.height = "95%";
-        loggingCanvas.style.width = "96.5%";
+        loggingCanvas.style.width = "96.0%";
         loggingCanvas.style.marginTop = "0px";
-        loggingCanvas.style.marginRight = "20px";
+        loggingCanvas.style.marginRight = "0px";
         loggingCanvas.style.marginLeft = "20px";
         loggingCanvas.style.display = 'none';
         loggingCanvas.style.border = "1px solid ";
@@ -258,7 +259,7 @@ if (TestMode === 'true') {
             downloadButtonsContainer.className = "download-buttons-container";
             downloadButtonsContainer.style.display = "none";
             downloadButtonsContainer.style.position = "relative";
-            downloadButtonsContainer.style.marginLeft = "76.0%";
+            downloadButtonsContainer.style.marginLeft = "76.5%";
             downloadButtonsContainer.style.marginTop = "-1px";
 
             const FMLISTButton = createFMLISTButton();
@@ -307,8 +308,8 @@ if (TestMode === 'true') {
 			FMDXButton.textContent = "FMDX";
 			FMDXButton.style.width = "80px";
 			FMDXButton.style.height = "20px";
-			FMDXButton.style.marginRight = "-145%";
-			FMDXButton.style.marginLeft = "-40px";
+			FMDXButton.style.marginRight = "-152%";
+			FMDXButton.style.marginLeft = "-25px";
 			FMDXButton.style.display = "flex";
 			FMDXButton.style.alignItems = "center";
 			FMDXButton.style.justifyContent = "center";
@@ -377,8 +378,8 @@ if (TestMode === 'true') {
 			const container = document.createElement("div");
 			container.style.width = "80px";
 			container.style.height = "20px";
-			container.style.marginRight = "-125px";
-			container.style.marginLeft = "-40px";
+			container.style.marginRight = "-140px";
+			container.style.marginLeft = "-20px";
 			container.style.display = "flex";
 			container.style.alignItems = "center";
 			container.style.justifyContent = "center";
@@ -1022,40 +1023,48 @@ if (TestMode === 'true') {
             checkBlacklistFileExistence(); // Check blacklist file existence on page load
         }
 
-        // Initialize the logger button
-        function initializeLoggerButton() {
-            setupWebSocket();
+       function initializeLoggerButton() {
+			//console.log('initializeLoggerButton wird aufgerufen'); // Debugging-Output
 
-            // Ensure download buttons are initially hidden
-            const LoggerButton = document.createElement('button');
-            LoggerButton.classList.add('hide-phone');
-            LoggerButton.id = 'Log-on-off';
-            LoggerButton.setAttribute('aria-label', 'Scan');
-            LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
-            LoggerButton.style.borderRadius = '0px';
-            LoggerButton.style.width = '100px';
-            LoggerButton.style.position = 'relative';
-            LoggerButton.style.marginTop = '16px';
-            LoggerButton.style.right = '0px';
-            LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
-            LoggerButton.classList.add('bg-color-2');
-            LoggerButton.title = `Plugin Version: ${plugin_version}`; // Add title attribute for mouseover effect
+			setupWebSocket();
 
-            const wrapperElement = document.querySelector('.tuner-info');
-            if (wrapperElement) {
-                const buttonWrapper = document.createElement('div');
-                buttonWrapper.classList.add('button-wrapper');
-                buttonWrapper.appendChild(LoggerButton);
-                wrapperElement.appendChild(buttonWrapper);
+			const LoggerButton = document.createElement('button');
+			LoggerButton.classList.add('hide-phone');
+			LoggerButton.id = 'Log-on-off';
+			LoggerButton.setAttribute('aria-label', 'Scan');
+			LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
+			LoggerButton.style.borderRadius = '0px';
+			LoggerButton.style.width = '100px';
+			LoggerButton.style.position = 'relative';
+			LoggerButton.style.marginTop = '16px';
+			LoggerButton.style.right = '0px';
+			LoggerButton.style.left = '0px';
+			LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
+			LoggerButton.classList.add('bg-color-2');
+			LoggerButton.title = `Plugin Version: ${plugin_version}`;
 
-                // Add empty line after the button
-                const emptyLine = document.createElement('br');
-                wrapperElement.appendChild(emptyLine);
-            }
+			const wrapperElement = document.querySelector('.tuner-info');
+			if (wrapperElement) {
+				const buttonWrapper = document.createElement('div');
+				buttonWrapper.classList.add('button-wrapper');
+				buttonWrapper.id = 'button-wrapper'; 
+		
+				buttonWrapper.style.display = 'flex';
+				buttonWrapper.style.justifyContent = 'left'; 
+				buttonWrapper.style.alignItems = 'center'; 
+				buttonWrapper.style.marginTop = '0px'; 
+		
+				buttonWrapper.appendChild(LoggerButton);
+				wrapperElement.appendChild(buttonWrapper);
 
-            LoggerButton.addEventListener('click', toggleLogger);
-            displaySignalCanvas();
-        }
+				const emptyLine = document.createElement('br');
+				wrapperElement.appendChild(emptyLine);
+			}
+
+			LoggerButton.addEventListener('click', toggleLogger);
+			displaySignalCanvas();
+		}
+
 
         // Initialize on window load
         window.onload = function () {
