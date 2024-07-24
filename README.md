@@ -1,5 +1,5 @@
 # RDS-Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
-
+This plugin provides logging functions for the FM-DX web server.
 ![image](https://github.com/user-attachments/assets/83ad1a0c-ada6-4036-ada6-0d80962132e1)
 
 
@@ -13,8 +13,6 @@
 2. Unpack the Logger.js and the Logger folder with the logger-plugin.js into the web server plugins folder (..fm-dx-webserver-main\plugins) [image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/98b38e5d-e58c-4192-b69c-739b608cf118)
 4. Restart the server
 5. Activate the plugin it in the settings
-
-This plugin provides logging functions for the FM-DX web server.
 
 ## Notes: 
 
