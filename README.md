@@ -1,12 +1,11 @@
 # RDS-Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 
-![image](https://github.com/user-attachments/assets/bb73d2f5-65f9-4d15-a39f-0a89f0d212c2)
-
+![image](https://github.com/user-attachments/assets/83ad1a0c-ada6-4036-ada6-0d80962132e1)
 
 
 ## Version 1.3h (only works from version 1.2.5 - older versions must take the plugin version 1.3f !!!)
 
-- Function Update für [PSTRotator Plugin](https://github.com/Highpoint2000/PSTRotator) 
+- RDS-LOGGER Button Position Update (several buttons in one line)   
 
 ## Installation notes:
 
@@ -25,25 +24,29 @@ If the logging plugin is activated, logging in the background will automatically
 
 ## History: 
 
-## Version 1.3g (only works from web server version 1.2.5 - older versions must take the plugin version 1.3f !!!)
+### Version 1.3h (only works from version 1.2.5 - older versions must take the plugin version 1.3f !!!)
+
+- Function Update für [PSTRotator Plugin](https://github.com/Highpoint2000/PSTRotator) 
+
+### Version 1.3g (only works from web server version 1.2.5 - older versions must take the plugin version 1.3f !!!)
 
 - Design Update
 
-## Version 1.3f (only works from web server version 1.2.3 - older versions must take the plugin version 1.3d !!!)
+### Version 1.3f (only works from web server version 1.2.3 - older versions must take the plugin version 1.3d !!!)
 
 - HTTPS Support for internal CORS PROXY  
 - FMLIST Button is only visible if OM_ID is entered
 - FMLIST & FMDX Buttons light up when identification is successful
 
-## Version 1.3e (only works from web server version 1.2.3!)
+### Version 1.3e (only works from web server version 1.2.3!)
 
 - Problem with multiple connections (user online) fixed
 
-## Version 1.3d
+### Version 1.3d
 
 - Logging optimizations
 
-## Version 1.3c
+### Version 1.3c
 
 - Layout adjustment for smaller screens
 - Logging optimizations
