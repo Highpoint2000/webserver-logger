@@ -14,7 +14,7 @@
 4. Restart the server
 5. Activate the plugin it in the settings
 
-This plugin provides scanning functions for the FM-DX web server.
+This plugin provides logging functions for the FM-DX web server.
 
 ## Notes: 
 
