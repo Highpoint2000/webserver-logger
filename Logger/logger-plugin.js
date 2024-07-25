@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3i)       ///
 ///                                                      ///
-///  by Highpoint                last update: 24.07.24   ///
+///  by Highpoint                last update: 25.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -26,7 +26,15 @@ let test_station = '';
 let test_pol = '';             
 let test_erp = '';             
 let test_distance = '';      
-let test_azimuth = '';        
+let test_azimuth = '';   
+
+// CSS Styles for buttonWrapper
+const buttonWrapperStyles = `
+      display: flex;
+      justify-content: left;
+      align-items: center;
+      margin-top: 0px;
+`;     
 
 if (TestMode === 'true') {
     console.log('Test mode enabled');
@@ -1023,12 +1031,13 @@ if (TestMode === 'true') {
             checkBlacklistFileExistence(); // Check blacklist file existence on page load
         }
 
-       function initializeLoggerButton() {
+		const LoggerButton = document.createElement('button');
+
+		function initializeLoggerButton() {
 			//console.log('initializeLoggerButton wird aufgerufen'); // Debugging-Output
 
 			setupWebSocket();
 
-			const LoggerButton = document.createElement('button');
 			LoggerButton.classList.add('hide-phone');
 			LoggerButton.id = 'Log-on-off';
 			LoggerButton.setAttribute('aria-label', 'Scan');
@@ -1038,7 +1047,6 @@ if (TestMode === 'true') {
 			LoggerButton.style.position = 'relative';
 			LoggerButton.style.marginTop = '16px';
 			LoggerButton.style.right = '0px';
-			LoggerButton.style.left = '0px';
 			LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
 			LoggerButton.classList.add('bg-color-2');
 			LoggerButton.title = `Plugin Version: ${plugin_version}`;
@@ -1048,15 +1056,8 @@ if (TestMode === 'true') {
 				const buttonWrapper = document.createElement('div');
 				buttonWrapper.classList.add('button-wrapper');
 				buttonWrapper.id = 'button-wrapper'; 
-		
-				buttonWrapper.style.display = 'flex';
-				buttonWrapper.style.justifyContent = 'left'; 
-				buttonWrapper.style.alignItems = 'center'; 
-				buttonWrapper.style.marginTop = '0px'; 
-		
 				buttonWrapper.appendChild(LoggerButton);
 				wrapperElement.appendChild(buttonWrapper);
-
 				const emptyLine = document.createElement('br');
 				wrapperElement.appendChild(emptyLine);
 			}
