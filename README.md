@@ -21,6 +21,12 @@ If the logging plugin is activated, logging in the background will automatically
 
 (*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
 
+Users who also use the Extended Description plugin should download the modified version from here, where the buttons are displayed in one line: https://github.com/Highpoint2000/Extended-Description-plugin-MOD-by-Highpoint-
+
+![image](https://github.com/user-attachments/assets/18a0eae5-af68-4b81-875a-07e385517c79)
+
+
+
 ## History: 
 
 ### Version 1.3h (only works from version 1.2.5 - older versions must take the plugin version 1.3f !!!)
