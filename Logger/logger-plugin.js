@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3i)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3j BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 25.07.24   ///
+///  by Highpoint                last update: 29.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -13,7 +13,7 @@
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3i'; // Plugin Version
+const plugin_version = 'V1.3j BETA'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -166,7 +166,7 @@ if (TestMode === 'true') {
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
         loggingCanvas.style.height = "95%";
-        loggingCanvas.style.width = "96.5%";
+        loggingCanvas.style.width = "97%";
         loggingCanvas.style.marginTop = "0px";
         loggingCanvas.style.marginRight = "0px";
         loggingCanvas.style.marginLeft = "20px";
@@ -1040,8 +1040,8 @@ if (TestMode === 'true') {
 
 			LoggerButton.classList.add('hide-phone');
 			LoggerButton.id = 'Log-on-off';
-			LoggerButton.setAttribute('aria-label', 'Scan');
-			LoggerButton.setAttribute('data-tooltip', 'Auto Scan on/off');
+			LoggerButton.setAttribute('aria-label', 'LOGGER');
+			LoggerButton.setAttribute('data-tooltip', 'RDS-LOGGER on/off');
 			LoggerButton.style.borderRadius = '0px';
 			LoggerButton.style.width = '100px';
 			LoggerButton.style.position = 'relative';
