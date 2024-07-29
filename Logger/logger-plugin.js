@@ -166,7 +166,7 @@ if (TestMode === 'true') {
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
         loggingCanvas.style.height = "95%";
-        loggingCanvas.style.width = "96.0%";
+        loggingCanvas.style.width = "96.5%";
         loggingCanvas.style.marginTop = "0px";
         loggingCanvas.style.marginRight = "0px";
         loggingCanvas.style.marginLeft = "20px";
