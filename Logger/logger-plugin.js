@@ -260,48 +260,48 @@ if (TestMode === 'true') {
             return str.length > maxLength ? str.substring(0, maxLength) : str;
         }
 
-        let downloadButtonsContainer = document.querySelector(".download-buttons-container");
+        let ButtonsContainer = document.querySelector(".download-buttons-container");
 
-        if (!downloadButtonsContainer) {
-            downloadButtonsContainer = document.createElement("div");
-            downloadButtonsContainer.className = "download-buttons-container";
-            downloadButtonsContainer.style.display = "none";
-            downloadButtonsContainer.style.position = "relative";
-            downloadButtonsContainer.style.marginLeft = "76.5%";
-            downloadButtonsContainer.style.marginTop = "-1px";
+        if (!ButtonsContainer) {
+            ButtonsContainer = document.createElement("div");
+            ButtonsContainer.className = "download-buttons-container";
+            ButtonsContainer.style.display = "none";
+            ButtonsContainer.style.position = "relative";
+            ButtonsContainer.style.marginLeft = "76.5%";
+            ButtonsContainer.style.marginTop = "0px";
 
             const FMLISTButton = createFMLISTButton();
             if (FMLISTButton instanceof Node) {
-                downloadButtonsContainer.appendChild(FMLISTButton);
+                ButtonsContainer.appendChild(FMLISTButton);
             }
 
             const FMDXButton = createFMDXButton();
             if (FMDXButton instanceof Node) {
-                downloadButtonsContainer.appendChild(FMDXButton);
+                ButtonsContainer.appendChild(FMDXButton);
             }
 
             const FilterButton = setupFilterButton();
             if (FilterButton instanceof Node) {
-                downloadButtonsContainer.appendChild(FilterButton);
+                ButtonsContainer.appendChild(FilterButton);
             }
 
             const blacklistButton = setupBlacklistButton();
             if (blacklistButton instanceof Node) {
-                downloadButtonsContainer.appendChild(blacklistButton);
+                ButtonsContainer.appendChild(blacklistButton);
             }
 
             const DownloadButtonCSV = createDownloadButtonCSV();
             if (DownloadButtonCSV instanceof Node) {
-                downloadButtonsContainer.appendChild(DownloadButtonCSV);
+                ButtonsContainer.appendChild(DownloadButtonCSV);
             }
 
             const DownloadButtonHTML = createDownloadButtonHTML();
             if (DownloadButtonHTML instanceof Node) {
-                downloadButtonsContainer.appendChild(DownloadButtonHTML);
+                ButtonsContainer.appendChild(DownloadButtonHTML);
             }
 
             if (parentContainer instanceof Node) {
-                parentContainer.appendChild(downloadButtonsContainer);
+                parentContainer.appendChild(ButtonsContainer);
             }
         }
 
@@ -328,18 +328,18 @@ if (TestMode === 'true') {
 				const data = previousDataByFrequency[currentFrequency];
 				const station = data ? data.station : '';
         
-			if (station === '') {
-					FMDXButton.classList.remove('bg-color-4');
-					FMDXButton.classList.add('bg-color-2');
-					FMDXButton.classList.remove('active'); 
-					FMDXButton.classList.add('inactive'); 
-					FMDXButton.disabled = true;
-				} else {
+			if (station !== '' && !isInBlacklist(currentFrequency, blacklist)) {
 					FMDXButton.classList.remove('bg-color-2');
 					FMDXButton.classList.add('bg-color-4');
 					FMDXButton.classList.remove('inactive'); 
 					FMDXButton.classList.add('active'); 
 					FMDXButton.disabled = false;
+				} else {
+					FMDXButton.classList.remove('bg-color-4');
+					FMDXButton.classList.add('bg-color-2');
+					FMDXButton.classList.remove('active'); 
+					FMDXButton.classList.add('inactive'); 
+					FMDXButton.disabled = true;
 				}
 			}
 
@@ -407,7 +407,7 @@ if (TestMode === 'true') {
 					const data = previousDataByFrequency[currentFrequency];
 					const station = data ? data.station : '';
 
-					if (station !== '' && FMLIST_OM_ID) {
+					if (station !== '' && FMLIST_OM_ID && !isInBlacklist(currentFrequency, blacklist)) {
 						FMLISTButton.classList.remove('bg-color-2');
 						FMLISTButton.classList.add('bg-color-4');
 						FMLISTButton.classList.remove('inactive'); 
@@ -657,7 +657,7 @@ if (TestMode === 'true') {
         // Toggle logger state and update UI accordingly
         function toggleLogger() {
             const LoggerButton = document.getElementById('Log-on-off');
-            const downloadButtonsContainer = document.querySelector('.download-buttons-container');
+            const ButtonsContainer = document.querySelector('.download-buttons-container');
             isLoggerOn = !isLoggerOn;
 
             if (isLoggerOn) {
@@ -672,8 +672,8 @@ if (TestMode === 'true') {
                 window.addEventListener('resize', adjustDataCanvasHeight);   
                 
                 // Show the download buttons
-                if (downloadButtonsContainer) {
-                    downloadButtonsContainer.style.display = 'flex';
+                if (ButtonsContainer) {
+                    ButtonsContainer.style.display = 'flex';
                 } else {
                     createDownloadButtons(); // Function to create download buttons if not already created
                 }
@@ -684,8 +684,8 @@ if (TestMode === 'true') {
                 displaySignalCanvas();
 
                 // Hide the download buttons
-                if (downloadButtonsContainer) {
-                    downloadButtonsContainer.style.display = 'none';
+                if (ButtonsContainer) {
+                    ButtonsContainer.style.display = 'none';
                 }
             }
         }
