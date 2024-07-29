@@ -1091,89 +1091,109 @@ if (TestMode === 'true') {
             });
         }
 
-        function downloadDataCSV() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const FilterState = getFilterStateFromCookie().state;
+function downloadDataCSV() {
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const currentTime = formatTime(now);
+    const FilterState = getFilterStateFromCookie().state;
 
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
 
-            let allData;
-            let sortedLogDataArray = [...logDataArray];
+    let allData;
+    let sortedLogDataArray = [...logDataArray];
 
-            try {
-                // Sort the entire array by frequency
-                sortedLogDataArray.sort((a, b) => {
-                    const freqA = parseFloat(a.split('|')[2]?.trim());
-                    const freqB = parseFloat(b.split('|')[2]?.trim());
-                    return freqA - freqB;
-                });
+    try {
+        // Debugging: Check the contents and types of logDataArray
+        console.log('Original logDataArray:', logDataArray);
 
-                if (FilterState) {
-                    allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
+        // Ensure all elements are strings
+        sortedLogDataArray = sortedLogDataArray.map(item => {
+            if (typeof item !== 'string') {
+                console.warn('Unexpected item type:', typeof item, item);
+                return '';
+            }
+            return item;
+        });
 
-                    // Filter the log data to remove duplicates
-                    let previousRecord = null;
-                    const filteredLogDataArray = [];
+        if (FilterState) {
+            allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\nfreq;pi;ps;name;city;itu;pol;erp;dist;az;id;date;time\n`;
 
-                    sortedLogDataArray.forEach(line => {
-                        const parts = line.split('|');
-                        if (parts.length < 4) {
-                            console.error('Invalid line format:', line);
-                            return;
-                        }
 
-                        const [date, time, freq, pi, ps, name, city, ...rest] = parts.map(value => value.trim());
-                        const cleanedPi = pi.replace('?', '');
+   // Sort the entire array by frequency
+        sortedLogDataArray.sort((a, b) => {
+            if (typeof a !== 'string' || typeof b !== 'string') {
+                console.error('One or both items are not strings:', a, b);
+                return 0;
+            }
+            
+            const freqA = parseFloat(a.split('|')[2]?.trim());
+            const freqB = parseFloat(b.split('|')[2]?.trim());
+            return freqA - freqB;
+        });
 
-                        if (previousRecord) {
-                            const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+            // Filter the log data to remove unwanted records
+            const filteredLogDataArray = [];
+            let previousRecord = null;
 
-                            if (freq === prevFreq && cleanedPi === prevPi) {
-                                if (name === prevName && city === prevCity) {
-                                    return;
-                                } else if (prevName === "" && prevCity === "") {
-                                    previousRecord = [freq, cleanedPi, name, city];
-                                    filteredLogDataArray[filteredLogDataArray.length - 1] = `${date}|${time}|${freq}|${pi}|${ps}|${name}|${city}|${rest.join('|')}`;
-                                    return;
-                                } else {
-                                    return;
-                                }
+            sortedLogDataArray.forEach((line, index) => {
+                const parts = line.split('|');
+                if (parts.length < 4) {
+                    console.error('Invalid line format:', line);
+                    return;
+                }
+
+                const [date, time, freq, pi, ps, name, city, ...rest] = parts.map(value => value.trim());
+                const cleanedPi = pi.replace('?', '');
+
+                // Check if the current line should be kept
+                const keepCurrent = index === sortedLogDataArray.length - 1 || cleanedPi !== '' || sortedLogDataArray[index + 1].split('|')[3]?.trim().replace('?', '') !== '';
+
+                if (keepCurrent) {
+                    if (previousRecord) {
+                        const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+                        if (freq === prevFreq && cleanedPi === prevPi) {
+                            if (name === prevName && city === prevCity) {
+                                return;
+                            } else if (prevName === "" && prevCity === "") {
+                                filteredLogDataArray[filteredLogDataArray.length - 1] = `${date}|${time}|${freq}|${pi}|${ps}|${name}|${city}|${rest.join('|')}`;
+                                return;
+                            } else {
+                                return;
                             }
                         }
-
-                        previousRecord = [freq, cleanedPi, name, city];
-                        filteredLogDataArray.push(line);
-                    });
-
-                    sortedLogDataArray = filteredLogDataArray;
-                } else {
-                    allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n`;
+                    }
+                    
+                    previousRecord = [freq, cleanedPi, name, city];
+                    filteredLogDataArray.push(line);
                 }
+            });
 
-                allData += sortedLogDataArray.map(line => {
-                    const parts = line.split('|');
-                    const [date, time, ...rest] = parts.map(value => value.trim());
-                    return FilterState ? `${rest.join(';')};${date};${time}` : line.replaceAll(/\s*\|\s*/g, ";");
-                }).join('\n');
-
-                const blob = new Blob([allData], { type: "text/plain" });
-
-                if (window.navigator.msSaveOrOpenBlob) {
-                    window.navigator.msSaveOrOpenBlob(blob, filename);
-                } else {
-                    const link = document.createElement("a");
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = filename;
-                    link.click();
-                    window.URL.revokeObjectURL(link.href);
-                }
-            } catch (error) {
-                console.error('Error in downloadDataCSV:', error);
-            }
+            sortedLogDataArray = filteredLogDataArray;
+        } else {
+            allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\nRDS-LOGGER ${currentDate} ${currentTime}\n\ndate;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n`;
         }
 
+        allData += sortedLogDataArray.map(line => {
+            const parts = line.split('|');
+            const [date, time, ...rest] = parts.map(value => value.trim());
+            return FilterState ? `${rest.join(';')};${date};${time}` : line.replaceAll(/\s*\|\s*/g, ";");
+        }).join('\n');
+
+        const blob = new Blob([allData], { type: "text/plain" });
+
+        if (window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, filename);
+        } else {
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
+            link.click();
+            window.URL.revokeObjectURL(link.href);
+        }
+    } catch (error) {
+        console.error('Error in downloadDataCSV:', error);
+    }
+}
 
         // Cache for API responses
         const apiCache = {};
