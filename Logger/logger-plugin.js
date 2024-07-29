@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3j BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 29.07.24   ///
+///  by Highpoint                last update: 30.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -1195,124 +1195,126 @@ function downloadDataCSV() {
     }
 }
 
-        // Cache for API responses
-        const apiCache = {};
+      // Cache for API responses
+const apiCache = {};
 
-        async function downloadDataHTML() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
+async function downloadDataHTML() {
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const currentTime = formatTime(now);
+    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
 
-            const filterState = getFilterStateFromCookie().state;
+    const filterState = getFilterStateFromCookie().state;
 
-            let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
-            allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
+    let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
+    allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
 
-            if (filterState) {
-                allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
-            } else {
-                allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
+    if (filterState) {
+        allData += `<table border="1"><tr><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>DATE</th><th>TIME</th><th>FMDX</th><th>FMLIST</th></tr>`;
+    } else {
+        allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
+    }
+
+    let sortedLogDataArray = [...logDataArray];
+
+    if (filterState) {
+        // Sort the array by frequency first
+        sortedLogDataArray.sort((a, b) => {
+            // Check if a and b are valid strings before splitting
+            if (typeof a !== 'string' || typeof b !== 'string') {
+                console.error('Invalid item types for sorting:', a, b);
+                return 0; // No change in order if a or b is not a string
             }
 
-            let sortedLogDataArray = [...logDataArray];
+            const partsA = a.split('|');
+            const partsB = b.split('|');
 
-            if (filterState) {
-                // Sort the array by frequency first
-                sortedLogDataArray.sort((a, b) => {
-                    // Check if a and b are valid strings before splitting
-                    if (typeof a !== 'string' || typeof b !== 'string') {
-                        return 0; // No change in order if a or b is not a string
-                    }
-
-                    const partsA = a.split('|');
-                    const partsB = b.split('|');
-
-                    if (partsA.length < 4 || partsB.length < 4) {
-                        return 0; // No change in order if split doesn't produce expected parts
-                    }
-
-                    const [dateA, timeA, freqA, piA] = partsA.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
-                    const [dateB, timeB, freqB, piB] = partsB.map((value, index) => index === 2 ? parseFloat(value.trim()) : value.trim().replace('?', ''));
-
-                    return freqA - freqB;
-                });
-
-                // Filter duplicates based on frequency and PI
-                let previousRecord = null;
-                const filteredLogDataArray = [];
-
-                sortedLogDataArray.forEach(line => {
-                    if (typeof line !== 'string') {
-                        console.error(`Invalid line found: ${line}`);
-                        return; // Skip this iteration if line is not a string
-                    }
-
-                    let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-                    const cleanedPi = pi.replace('?', '');
-
-                    if (previousRecord) {
-                        const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
-
-                        if (freq === prevFreq && cleanedPi === prevPi) {
-                            if (name === prevName && city === prevCity) {
-                                // Skip the current record
-                                return;
-                            } else if (prevName === "" && prevCity === "") {
-                                // Replace the previous record
-                                previousRecord = [freq, cleanedPi, name, city];
-                                filteredLogDataArray[filteredLogDataArray.length - 1] = line;
-                                return;
-                            } else {
-                                // Skip the current record
-                                return;
-                            }
-                        }
-                    }
-
-                    previousRecord = [freq, cleanedPi, name, city];
-                    filteredLogDataArray.push(line);
-                });
-
-                // Assign filtered array back to sortedLogDataArray
-                sortedLogDataArray = filteredLogDataArray;
+            if (partsA.length < 4 || partsB.length < 4) {
+                console.error('Invalid line format for sorting:', a, b);
+                return 0; // No change in order if split doesn't produce expected parts
             }
 
-            sortedLogDataArray.forEach(line => {
-                if (typeof line !== 'string') {
-                    console.error(`Invalid line found: ${line}`);
-                    return; // Skip this iteration if line is not a string
+            const freqA = parseFloat(partsA[2]?.trim());
+            const freqB = parseFloat(partsB[2]?.trim());
+            return freqA - freqB;
+        });
+
+        // Filter duplicates based on frequency and PI
+        let previousRecord = null;
+        const filteredLogDataArray = [];
+
+        sortedLogDataArray.forEach(line => {
+            if (typeof line !== 'string') {
+                console.error(`Invalid line found: ${line}`);
+                return; // Skip this iteration if line is not a string
+            }
+
+            let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+            const cleanedPi = pi.replace('?', '');
+
+            if (previousRecord) {
+                const [prevFreq, prevPi, prevName, prevCity] = previousRecord;
+
+                if (freq === prevFreq && cleanedPi === prevPi) {
+                    if (name === prevName && city === prevCity) {
+                        // Skip the current record
+                        return;
+                    } else if (prevName === "" && prevCity === "") {
+                        // Replace the previous record
+                        previousRecord = [freq, cleanedPi, name, city];
+                        filteredLogDataArray[filteredLogDataArray.length - 1] = line;
+                        return;
+                    } else {
+                        // Skip the current record
+                        return;
+                    }
                 }
-
-                let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-
-                let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
-                let link2 = id !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
-
-                if (filterState) {
-                    allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-                } else {
-                    allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-                }
-            });
-
-            let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
-            allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
-
-            const blob = new Blob([allData], { type: "text/html" });
-
-            if (window.navigator.msSaveOrOpenBlob) {
-                // For IE browser
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                // For other browsers
-                const link = document.createElement("a");
-                link.href = window.URL.createObjectURL(blob);
-                link.download = filename;
-                link.click();
-                window.URL.revokeObjectURL(link.href);
             }
+
+            previousRecord = [freq, cleanedPi, name, city];
+            filteredLogDataArray.push(line);
+        });
+
+        // Assign filtered array back to sortedLogDataArray
+        sortedLogDataArray = filteredLogDataArray;
+    }
+
+    sortedLogDataArray.forEach(line => {
+        if (typeof line !== 'string') {
+            console.error(`Invalid line found: ${line}`);
+            return; // Skip this iteration if line is not a string
         }
+
+        let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+
+        let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
+        let link2 = id !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
+
+        if (filterState) {
+            allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
+        } else {
+            allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
+        }
+    });
+
+    let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
+    allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
+
+    const blob = new Blob([allData], { type: "text/html" });
+
+    if (window.navigator.msSaveOrOpenBlob) {
+        // For IE browser
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+    } else {
+        // For other browsers
+        const link = document.createElement("a");
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+    }
+}
+
 
         // Get ID value from API
         async function getidValue(currentFrequency, picode, itu, city) {
