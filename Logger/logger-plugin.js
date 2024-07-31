@@ -1,19 +1,19 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.3j BETA)  ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.4)        ///
 ///                                                      ///
-///  by Highpoint                last update: 30.07.24   ///
+///  by Highpoint                last update: 31.07.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
 ////////////////////////////////////////////////////////////
 
-///  This plugin only works from web server version 1.2.3!!!
+///  This plugin only works from web server version 1.2.6!!!
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.3j BETA'; // Plugin Version
+const plugin_version = 'V1.4'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -26,7 +26,8 @@ let test_station = '';
 let test_pol = '';             
 let test_erp = '';             
 let test_distance = '';      
-let test_azimuth = '';   
+let test_azimuth = ''; 
+let test_stationid = '';   
 
 // CSS Styles for buttonWrapper
 const buttonWrapperStyles = `
@@ -49,6 +50,7 @@ if (TestMode === 'true') {
     test_erp = '160';           // Test ERP (Effective Radiated Power)
     test_distance = '1416';     // Test distance
     test_azimuth = '33';        // Test azimuth
+	test_stationid = 'xxxxxx';  // Test stationid
 }
 
 // Immediately invoked function expression (IIFE) to encapsulate the loggerPlugin code
@@ -68,7 +70,7 @@ if (TestMode === 'true') {
         const ServerDescription = content ? content.replace('Server description: ', '') : null;
         let lastBlacklistFrequency = null;
         let NewLine = 'false';
-        let idAll = '';
+        let stationidAll = '';
         let id = '';
         let loopCounter = 0;
         let scrollCounter = 0;
@@ -121,6 +123,7 @@ if (TestMode === 'true') {
 
             // Process data if frequency is not in the blacklist
             const txInfo = eventData.txInfo;
+			//console.log(txInfo);
 
             let ps = eventData.ps;
             if ((eventData.ps_errors !== "0,0,0,0,0,0,0,1") && (eventData.ps_errors !== "0,0,0,0,0,0,0,0")) {
@@ -130,13 +133,14 @@ if (TestMode === 'true') {
             previousDataByFrequency[frequency] = {
                 picode: eventData.pi,
                 ps: ps,
-                station: txInfo ? txInfo.station : "",
+                station: txInfo ? txInfo.tx : "",
                 pol: txInfo ? txInfo.pol : "",
                 erp: txInfo ? txInfo.erp : "",
                 city: txInfo ? txInfo.city : "",
                 itu: txInfo ? txInfo.itu : "",
-                distance: txInfo ? txInfo.distance : "",
-                azimuth: txInfo ? txInfo.azimuth : ""
+                distance: txInfo ? txInfo.dist : "",
+                azimuth: txInfo ? txInfo.azi : "",
+				stationid: txInfo ? txInfo.id : ""
             };
 
             currentFrequency = frequency;
@@ -327,6 +331,7 @@ if (TestMode === 'true') {
 			function updateFMDXButtonClass() {
 				const data = previousDataByFrequency[currentFrequency];
 				const station = data ? data.station : '';
+				stationid = data ? data.stationid : '';
         
 			if (station !== '' && !isInBlacklist(currentFrequency, blacklist)) {
 					FMDXButton.classList.remove('bg-color-2');
@@ -347,7 +352,7 @@ if (TestMode === 'true') {
 			FMDXButton.addEventListener("click", function () {
 				const data = previousDataByFrequency[currentFrequency];
 				const station = data ? data.station : '';
-				if (id) {
+				if (stationid) {
 					// Check if the popup window is already open
 					if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
 					// Close if already open
@@ -370,7 +375,7 @@ if (TestMode === 'true') {
         // Function to open the FMDX link in a popup window
         function openFMDXPage() {
             // URL for the website
-            const url = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*`;
+            const url = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${stationid}&findId=*`;
 
             // Open the link in a popup window
             FMDXWindow = window.open(url, "_blank", "width=600,height=400"); // Adjust the window size as needed
@@ -406,6 +411,7 @@ if (TestMode === 'true') {
 				function updateFMLISTButtonClass() {
 					const data = previousDataByFrequency[currentFrequency];
 					const station = data ? data.station : '';
+					stationid = data ? data.stationid : '';
 
 					if (station !== '' && FMLIST_OM_ID && !isInBlacklist(currentFrequency, blacklist)) {
 						FMLISTButton.classList.remove('bg-color-2');
@@ -424,7 +430,7 @@ if (TestMode === 'true') {
 
 				// Eventlistener for button click
 				FMLISTButton.addEventListener("click", function () {
-					if (id) {
+					if (stationid) {
 						// Check if the popup window is already open
 						if (isOpenFMLIST && FMLISTWindow && !FMLISTWindow.closed) {
 							// Close if already open
@@ -452,7 +458,7 @@ if (TestMode === 'true') {
 		// Function to open the FMLIST link in a popup window
 		function openFMLISTPage(distance, azimuth, itu) {
 			// URL for the website
-			const url = `https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}`;
+			const url = `https://www.fmlist.org/fi_inslog.php?lfd=${stationid}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}`;
 
 			// Open the link in a popup window
 			FMLISTWindow = window.open(url, "_blank", "width=800,height=820"); // Adjust the window size as needed
@@ -524,6 +530,7 @@ if (TestMode === 'true') {
                 let azimuth = "";
                 let picode = "";
                 let ps = "";
+				let stationid = "";
                     
        if (TestMode === 'true' && currentFrequency === test_frequency) {   
        
@@ -544,6 +551,7 @@ if (TestMode === 'true') {
             azimuth = truncateString(padLeftWithSpaces(test_azimuth, 3), 3);
             picode = truncateString(padRightWithSpaces(test_picode, 7), 7);
             ps = truncateString(padRightWithSpaces(test_ps.replace(/ /g, "_"), 9), 9);
+			stationid = (test_stationid);
         } else {
             station = Screen === 'ultrasmall'
             ? truncateString(padRightWithSpaces(data.station, 19), 19)
@@ -562,6 +570,7 @@ if (TestMode === 'true') {
             azimuth = truncateString(padLeftWithSpaces(data.azimuth, 3), 3);
             picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
             ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
+			stationid = (data.stationid);
 
         }
                 const outputText = station 
@@ -575,17 +584,16 @@ if (TestMode === 'true') {
                 if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
                       if (data.station && loopCounter === 0) {
 
-                            if (TestMode === 'true' && currentFrequency === test_frequency) {   
-                                id = await getidValue(currentFrequency, test_picode, test_itu, test_city);
-                            } else {
-                                id = await getidValue(currentFrequency, data.picode, data.itu, data.city);
+ 
+                            if (stationid === undefined) {
+                                let stationid = '';
                             }
-                                if (id === undefined) {
-                                let id = '';
-                            }
-                            if (id && !idAll.split(',').includes(id)) {
-                                idAll += idAll ? `,${id}` : id;
-                            }
+							//console.log(stationid);
+							if (stationid !== undefined && stationid >= 0) {
+								if (!stationidAll.split(',').includes(stationid.toString())) {
+									stationidAll += stationidAll ? `,${stationid}` : stationid;
+								}
+							}
                             
                             loopCounter = 1;
                     }
@@ -621,7 +629,7 @@ if (TestMode === 'true') {
                                     if (id === '') {  
                                         loopCounter = 0;
                                     }
-                                    outputArray += ` | ${id}`;
+                                    outputArray += ` | ${stationid}`;
                                     logDataArray[logDataArray.length -1] = outputArray;
 
 
@@ -637,7 +645,7 @@ if (TestMode === 'true') {
                                 if (id === '') {  
                                     loopCounter = 0;
                                 }                                                               
-                                outputArray += ` | ${id}`;
+                                outputArray += ` | ${stationid}`;
                                 logDataArray[logDataArray.length -1] = outputArray;
                             }
                         }
@@ -654,41 +662,60 @@ if (TestMode === 'true') {
             }
         }
 
-        // Toggle logger state and update UI accordingly
-        function toggleLogger() {
-            const LoggerButton = document.getElementById('Log-on-off');
-            const ButtonsContainer = document.querySelector('.download-buttons-container');
-            isLoggerOn = !isLoggerOn;
+   // Toggle logger state and update UI accordingly
+function toggleLogger() {
+    const LoggerButton = document.getElementById('Log-on-off');
+    const ButtonsContainer = document.querySelector('.download-buttons-container');
+    const antennaImage = document.querySelector('#antenna'); // Ensure ID 'antenna' is correct
+    isLoggerOn = !isLoggerOn;
 
-            if (isLoggerOn) {
-                LoggerButton.classList.remove('bg-color-2');
-                LoggerButton.classList.add('bg-color-4');
-                coverTuneButtonsPanel(true); // Cover when logger is on
-                displaySignalOutput();
-                
-                // Delayed call to set the initial height
-                setTimeout(adjustDataCanvasHeight, 100);
-                // Optionally, add an event listener to adjust the height dynamically if the container's size changes
-                window.addEventListener('resize', adjustDataCanvasHeight);   
-                
-                // Show the download buttons
-                if (ButtonsContainer) {
-                    ButtonsContainer.style.display = 'flex';
-                } else {
-                    createDownloadButtons(); // Function to create download buttons if not already created
-                }
-            } else {
-                LoggerButton.classList.remove('bg-color-4');
-                LoggerButton.classList.add('bg-color-2');
-                coverTuneButtonsPanel(false); // Remove when logger is off
-                displaySignalCanvas();
+    if (isLoggerOn) {
+        // Update button appearance
+        LoggerButton.classList.remove('bg-color-2');
+        LoggerButton.classList.add('bg-color-4');
+        
+        // Perform actions when logger is on
+        coverTuneButtonsPanel(true); // Cover when logger is on
+        displaySignalOutput();
 
-                // Hide the download buttons
-                if (ButtonsContainer) {
-                    ButtonsContainer.style.display = 'none';
-                }
-            }
+        // Set initial height with delay
+        setTimeout(adjustDataCanvasHeight, 100);
+        // Adjust height dynamically on window resize
+        window.addEventListener('resize', adjustDataCanvasHeight);   
+
+        // Show download buttons or create them if not already present
+        if (ButtonsContainer) {
+            ButtonsContainer.style.display = 'flex';
+        } else {
+            createDownloadButtons(); // Function to create download buttons if not already created
         }
+
+        // Hide antenna image
+        if (antennaImage) {
+            antennaImage.style.visibility = 'hidden'; 
+        }
+
+    } else {
+        // Update button appearance
+        LoggerButton.classList.remove('bg-color-4');
+        LoggerButton.classList.add('bg-color-2');
+        
+        // Perform actions when logger is off
+        coverTuneButtonsPanel(false); // Remove cover when logger is off
+        displaySignalCanvas();
+
+        // Hide download buttons
+        if (ButtonsContainer) {
+            ButtonsContainer.style.display = 'none';
+        }
+
+        // Show antenna image
+        if (antennaImage) {
+            antennaImage.style.visibility = 'visible'; 
+        }
+    }
+}
+
 
         // Create CSV download button
         function createDownloadButtonCSV() {
@@ -1297,7 +1324,7 @@ async function downloadDataHTML() {
         }
     });
 
-    let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${idAll}&findId=*`;
+    let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${stationidAll}&findId=*`;
     allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
 
     const blob = new Blob([allData], { type: "text/html" });
@@ -1314,59 +1341,6 @@ async function downloadDataHTML() {
         window.URL.revokeObjectURL(link.href);
     }
 }
-
-
-        // Get ID value from API
-        async function getidValue(currentFrequency, picode, itu, city) {
-            try {
-                const modifiedFreq = currentFrequency.slice(0, -2);
-                const cacheKey = `${modifiedFreq}_${itu}`;
-
-                if (apiCache[cacheKey]) {
-                    console.log('Using cache for', cacheKey);
-                    return findidInData(apiCache[cacheKey], currentFrequency, picode, itu, city);
-                }
-
-                const apiUrl = `https://maps.fmdx.pl/api/?freq=${modifiedFreq}&itu=${itu}`;
-                const corsAnywhereUrl = 'https://cors-proxy.highpoint2000.synology.me:5001/';
-                const fetchPromise = fetch(`${corsAnywhereUrl}${apiUrl}`);
-                const timeoutPromise = new Promise((resolve, reject) => {
-                    setTimeout(() => reject(new Error('Request timed out')), 2000);
-                });
-
-                const response = await Promise.race([fetchPromise, timeoutPromise]);
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
-                }
-
-                const data = await response.json();
-                apiCache[cacheKey] = data; // Cache the API response
-                return findidInData(data, currentFrequency, picode, itu, city);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                return null;
-            }
-        }
-
-        // Find ID in data
-        function findidInData(data, currentFrequency, picode, itu, city) {
-            if (data && data.locations) {
-                for (let key in data.locations) {
-                    const entry = data.locations[key];
-                    if (entry.name === city && entry.itu === itu && Array.isArray(entry.stations)) {
-                        for (let station of entry.stations) {
-                            if (station.freq === parseFloat(currentFrequency) && station.pi === picode) {
-                                console.log(currentFrequency, picode, itu, city, 'ID found:', station.id);
-                                return station.id; // Return the ID of the matching station
-                            }
-                        }
-                    }
-                }
-            } else {
-                console.log(`${picode} is not an array:`, JSON.stringify(data, null, 2));
-            }
-            return null; // No matching station found
-        }
 
     })();
 })();
