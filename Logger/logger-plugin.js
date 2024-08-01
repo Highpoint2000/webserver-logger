@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.4)        ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.4a BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 31.07.24   ///
+///  by Highpoint                last update: 01.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,10 +10,10 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.4'; // Plugin Version
+const plugin_version = 'V1.4a BETA'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -430,7 +430,7 @@ if (TestMode === 'true') {
 
 				// Eventlistener for button click
 				FMLISTButton.addEventListener("click", function () {
-					if (stationid) {
+					if (stationid > 0) {
 						// Check if the popup window is already open
 						if (isOpenFMLIST && FMLISTWindow && !FMLISTWindow.closed) {
 							// Close if already open
@@ -442,6 +442,8 @@ if (TestMode === 'true') {
 							openFMLISTPage(data.distance, data.azimuth, data.itu);
 							isOpenFMLIST = true;
 						}
+					} else {
+						alert (`Station-ID: ${stationid} is not compatible with FMLIST Database!`);
 					}
 				});
 
@@ -1315,7 +1317,7 @@ async function downloadDataHTML() {
         let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
 
         let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
-        let link2 = id !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
+		let link2 = id !== '' &&  id > 0 ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
         if (filterState) {
             allData += `<tr><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${date}</td><td>${time}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
