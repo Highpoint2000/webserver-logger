@@ -10,7 +10,7 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
 const plugin_version = 'V1.4a BETA'; // Plugin Version
