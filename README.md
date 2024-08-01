@@ -3,11 +3,9 @@ This plugin provides logging functions for the FM-DX web server.
 
 ![image](https://github.com/user-attachments/assets/83ad1a0c-ada6-4036-ada6-0d80962132e1)
 
+## Version 1.4a BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
-## Version 1.4 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
-
-- compatible with changed websocket data in version 1.2.6
-- remove the cors-proxy 
+- alert message/filter for non-FMLIST compatible station IDs 
 
 ## Installation notes:
 
@@ -29,6 +27,11 @@ Users who also use the Extended Description plugin should download the modified 
 
 
 ## History: 
+
+## Version 1.4 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
+
+- compatible with changed websocket data in version 1.2.6
+- remove the cors-proxy 
 
 ## Version 1.3i (only works from version 1.2.5 - older versions must take the plugin version 1.3f !!!)
 
