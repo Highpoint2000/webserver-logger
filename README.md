@@ -5,7 +5,8 @@ This plugin provides logging functions for the FM-DX web server.
 
 ## Version 1.4a BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
-- alert message/filter for non-FMLIST compatible station IDs 
+- Alert message/filter for non-FMLIST compatible station IDs 
+- Logging optimizations (for MS)
 
 ## Installation notes:
 
