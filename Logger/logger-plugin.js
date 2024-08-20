@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.4a BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 05.08.24   ///
+///  by Highpoint                last update: 20.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,7 +10,7 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
 const plugin_version = 'V1.4a BETA'; // Plugin Version
@@ -122,6 +122,7 @@ if (TestMode === 'true') {
         // Handle incoming WebSocket messages
         function handleWebSocketMessage(event) {
             const eventData = JSON.parse(event.data);
+			console.log(eventData);
             const frequency = eventData.freq;
 
             // Process data if frequency is not in the blacklist
@@ -158,7 +159,7 @@ if (TestMode === 'true') {
         let isLoggerOn = false;
 
         // Ensure parent container exists
-        let parentContainer = document.querySelector(".canvas-container.hide-phone");
+        let parentContainer = document.querySelector(".canvas-container");
         if (!parentContainer) {
             parentContainer = document.createElement("div");
             parentContainer.className = "canvas-container hide-phone";
@@ -741,6 +742,7 @@ function toggleLogger() {
             DownloadButtonHTML.style.width = "50px";
             DownloadButtonHTML.style.height = "20px";
             DownloadButtonHTML.style.marginLeft = "5px";
+			DownloadButtonHTML.style.marginRight = "110px";
             DownloadButtonHTML.style.display = "flex";
             DownloadButtonHTML.style.alignItems = "center";
             DownloadButtonHTML.style.justifyContent = "center";
@@ -758,21 +760,17 @@ function toggleLogger() {
 			if (loggingCanvas) {
 				loggingCanvas.style.display = 'none';
 			}
-			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
-				CanvasRotator.style.display = 'none';
+			const ContainerRotator = document.getElementById('containerRotator');
+			if (ContainerRotator) {
+				ContainerRotator.style.display = 'block';
 			}
-			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
-				backgroundRotator.style.display = 'none';
+			const ContainerAntenna = document.getElementById('Antenna');
+			if (ContainerAntenna) {
+				ContainerAntenna.style.display = 'block';
 			}
 			const signalCanvas = document.getElementById('signal-canvas');
 			if (signalCanvas) {
 				signalCanvas.style.display = 'block';
-			}
-			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
-				CanvasRotator.style.display = 'block';
-			}
-			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
-			backgroundRotator.style.display = 'block';
 			}
 		}
 
@@ -782,21 +780,19 @@ function toggleLogger() {
 			if (loggingCanvas) {
 				loggingCanvas.style.display = 'block';
 			}
-			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
-				CanvasRotator.style.display = 'block';
+			const ContainerRotator = document.getElementById('containerRotator');
+			if (ContainerRotator) {
+				ContainerRotator.style.display = 'none';
 			}
-			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
-				backgroundRotator.style.display = 'block';
+			const ContainerAntenna = document.getElementById('Antenna');
+			if (ContainerAntenna) {
+				ContainerAntenna.style.display = 'none';
+				ButtonsContainer.style.marginLeft = "-20.5%";
+				ButtonsContainer.style.marginTop = "166px";
 			}
 			const signalCanvas = document.getElementById('signal-canvas');
 			if (signalCanvas) {
 				signalCanvas.style.display = 'none';
-			}
-			if (typeof CanvasRotator !== 'undefined' && CanvasRotator) {
-				CanvasRotator.style.display = 'none';
-			}
-			if (typeof backgroundRotator !== 'undefined' && backgroundRotator) {
-				backgroundRotator.style.display = 'none';
 			}
 		}
 
@@ -1100,15 +1096,40 @@ function toggleLogger() {
             checkBlacklist();
         };
 
-function downloadDataCSV() {
+async function checkFileExists(url) {
     try {
-        const now = new Date();
-        const currentDate = formatDate(now);
-        const currentTime = formatTime(now);
-        const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+        const response = await fetch(url, { method: 'GET' });
+        return response.ok; // Returns true if the response status is 200-299
+    } catch (error) {
+        console.error('Error checking file existence:', error);
+        return false;
+    }
+}
 
-        const filterState = getFilterStateFromCookie().state;
+async function downloadDataCSV() {
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const currentTime = formatTime(now);
+    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
 
+    const filterState = getFilterStateFromCookie().state;
+    const baseUrl = window.location.origin + '/logs/';
+    const fileName = filterState ? `SCANNER_${currentDate}_filtered.csv` : `SCANNER_${currentDate}.csv`;
+    const fileUrl = baseUrl + fileName;
+
+    // Check if the file exists
+    const fileExists = await checkFileExists(fileUrl);
+    if (fileExists) {
+        // If the file exists, download it
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = fileName;
+        link.click();
+        return; // Exit the function after initiating the download
+    }
+
+    // File does not exist, proceed to generate the CSV content
+    try {
         // Initialize CSV data with headers and metadata
         let allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\n`;
         allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\n` : `RDS-LOGGER ${currentDate} ${currentTime}\n\n`;
@@ -1144,8 +1165,19 @@ function downloadDataCSV() {
     }
 }
 
+
 // Cache for API responses
 const apiCache = {};
+
+async function checkFileExists(url) {
+    try {
+        const response = await fetch(url, { method: 'GET' });
+        return response.ok; // Returns true if the response status is 200-299
+    } catch (error) {
+        console.error('Error checking file existence:', error);
+        return false;
+    }
+}
 
 async function downloadDataHTML() {
     const now = new Date();
@@ -1154,7 +1186,22 @@ async function downloadDataHTML() {
     const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
 
     const filterState = getFilterStateFromCookie().state;
+    const baseUrl = window.location.origin + '/logs/';
+    const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
+    const fileUrl = baseUrl + fileName;
 
+    // Check if the file exists
+    const fileExists = await checkFileExists(fileUrl);
+    if (fileExists) {
+        // If the file exists, download it
+        const link = document.createElement('a');
+        link.href = fileUrl;
+        link.download = fileName;
+        link.click();
+        return; // Exit the function after initiating the download
+    }
+
+    // File does not exist, proceed to generate the HTML content
     let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
     allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
     allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
@@ -1174,7 +1221,6 @@ async function downloadDataHTML() {
         let link2 = id !== '' && id > 0 ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
         allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-
     });
 
     let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${stationidAll}&findId=*`;
@@ -1194,6 +1240,8 @@ async function downloadDataHTML() {
         window.URL.revokeObjectURL(link.href);
     }
 }
+
+
 
 
     })();
