@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.4a BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 20.08.24   ///
+///  by Highpoint                last update: 21.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -122,7 +122,7 @@ if (TestMode === 'true') {
         // Handle incoming WebSocket messages
         function handleWebSocketMessage(event) {
             const eventData = JSON.parse(event.data);
-			console.log(eventData);
+			// console.log(eventData);
             const frequency = eventData.freq;
 
             // Process data if frequency is not in the blacklist
@@ -600,31 +600,31 @@ if (TestMode === 'true') {
                         newOutputDiv.style.fontSize = "16px";
                         newOutputDiv.style.marginBottom = "-1px";
                         newOutputDiv.style.padding = "0 10px";
-									
-						if (NewLine === 'true' || Savepicode !== picode && !picode.includes('?') && !ps.includes('?')) {						
+														
+						if (NewLine === 'true') {						
 		
 							if (FilterState) { 	
 		
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
 								}	
-							
+
 								const lastOutputDiv = dataCanvas.lastChild;
 								lastOutputDiv.textContent = outputText;
-								
+								FilteredlogDataArray[FilteredlogDataArray.length +1] = outputArray;
 							}
 								
-							FilteredlogDataArray[FilteredlogDataArray.length +1] = outputArray;
-
+							
 						}
 
-						if (picode.includes('?') || Savestationid !== stationid || ps.includes('?')) {
+						if (!picode.includes('?') && !ps.includes('?')) {
 				
 							if (FilterState) { 	
 				
 								const lastOutputDiv = dataCanvas.lastChild;
 								lastOutputDiv.textContent = outputText;
-							
+								SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
+								
 							}
 							
 							FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArray;
@@ -644,7 +644,6 @@ if (TestMode === 'true') {
 						}
 						
 						NewLine = 'false'; 
-                        SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
                         Savepicode = picode;
                         Savestation = station;
 						Savestationid = stationid;
@@ -652,14 +651,6 @@ if (TestMode === 'true') {
 						dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;					
 						
 				}
-            }
-        }
-
-        // Cover the tune buttons panel
-        function coverTuneButtonsPanel(isCovered) {
-            const tuneButtonsPanel = document.getElementById('tune-buttons');
-            if (tuneButtonsPanel) {
-                tuneButtonsPanel.style.backgroundColor = isCovered ? 'black' : '';
             }
         }
 
@@ -676,7 +667,6 @@ function toggleLogger() {
         LoggerButton.classList.add('bg-color-4');
         
         // Perform actions when logger is on
-        coverTuneButtonsPanel(true); // Cover when logger is on
         displaySignalOutput();
 
         // Set initial height with delay
@@ -702,7 +692,6 @@ function toggleLogger() {
         LoggerButton.classList.add('bg-color-2');
         
         // Perform actions when logger is off
-        coverTuneButtonsPanel(false); // Remove cover when logger is off
         displaySignalCanvas();
 
         // Hide download buttons
