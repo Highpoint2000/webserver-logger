@@ -10,7 +10,7 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const TestMode = 'false'; // 'false' is only for testing
 const plugin_version = 'V1.4a BETA'; // Plugin Version
@@ -293,11 +293,16 @@ if (TestMode === 'true') {
                 ButtonsContainer.appendChild(FilterButton);
             }
 
+			const ScannerButton = setupScannerButton();
+            if (ScannerButton instanceof Node) {
+                ButtonsContainer.appendChild(ScannerButton);
+            }
+
             const blacklistButton = setupBlacklistButton();
             if (blacklistButton instanceof Node) {
                 ButtonsContainer.appendChild(blacklistButton);
             }
-
+			
             const DownloadButtonCSV = createDownloadButtonCSV();
             if (DownloadButtonCSV instanceof Node) {
                 ButtonsContainer.appendChild(DownloadButtonCSV);
@@ -617,7 +622,7 @@ if (TestMode === 'true') {
 							
 						}
 
-						if (!picode.includes('?') && !ps.includes('?')) {
+						if (!picode.includes('??') && !ps.includes('?')) {
 				
 							if (FilterState) { 	
 				
@@ -731,7 +736,7 @@ function toggleLogger() {
             DownloadButtonHTML.style.width = "50px";
             DownloadButtonHTML.style.height = "20px";
             DownloadButtonHTML.style.marginLeft = "5px";
-			DownloadButtonHTML.style.marginRight = "110px";
+			DownloadButtonHTML.style.marginRight = "310px";
             DownloadButtonHTML.style.display = "flex";
             DownloadButtonHTML.style.alignItems = "center";
             DownloadButtonHTML.style.justifyContent = "center";
@@ -869,7 +874,7 @@ function toggleLogger() {
                 FilterButton.id = "Filter-button";
                 FilterButton.style.width = "100px";
                 FilterButton.style.height = "20px";
-                FilterButton.style.marginLeft = "-250px";
+                FilterButton.style.marginLeft = "-310px";
                 FilterButton.style.marginRight = "5px";
                 FilterButton.style.marginTop = "0px";
                 FilterButton.style.display = "flex";
@@ -888,9 +893,73 @@ function toggleLogger() {
 
             return FilterButton;
         }
-
+		
+		
         document.addEventListener("DOMContentLoaded", () => {
             setupFilterButton();
+        });
+		
+		  // Retrieve Scanner state from cookies
+        function getScannerStateFromCookie() {
+            const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Scanner='));
+            return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: false };
+        }
+
+        // Set Scanner state in cookies
+        function setScannerStateInCookie(state) {
+            document.cookie = `Scanner=${JSON.stringify(state)}; path=/`;
+        }
+		
+		// Update Scanner button appearance based on state
+        function updateScannerButton(button, state) {
+            if (!button) {
+                console.error('Scanner button does not exist.');
+                return;
+            }
+            if (!state) {
+                button.textContent = "SCANNER";
+                button.classList.remove('bg-color-4');
+                button.classList.add('bg-color-2');
+            } else {
+                button.textContent = "SCANNER";
+                button.classList.remove('bg-color-2');
+                button.classList.add('bg-color-4');
+                button.style.pointerEvents = "auto"; // Enable hover effect
+            }
+        }
+
+		// Setup Scanner button and state
+        function setupScannerButton() {
+            let ScannerButton = document.getElementById("Scanner-button");
+            const ScannerState = getScannerStateFromCookie();
+
+            if (!ScannerButton) {
+                ScannerButton = document.createElement("button");
+                ScannerButton.id = "Scanner-button";
+                ScannerButton.style.width = "100px";
+                ScannerButton.style.height = "20px";
+                ScannerButton.style.marginLeft = "0px";
+                ScannerButton.style.marginRight = "5px";
+                ScannerButton.style.marginTop = "0px";
+                ScannerButton.style.display = "flex";
+                ScannerButton.style.alignItems = "center";
+                ScannerButton.style.justifyContent = "center";
+                ScannerButton.style.borderRadius = '0px';
+                ScannerButton.style.fontWeight = "bold";
+                ScannerButton.addEventListener("click", () => {
+                    const newState = !getScannerStateFromCookie().state;
+                    setScannerStateInCookie({ state: newState });
+                    updateScannerButton(ScannerButton, newState);
+                });
+
+                updateScannerButton(ScannerButton, ScannerState.state);
+            }
+
+            return ScannerButton;
+        }
+		
+		document.addEventListener("DOMContentLoaded", () => {
+            setupScannerButton();
         });
 
         // Setup blacklist button and state
@@ -904,7 +973,7 @@ function toggleLogger() {
                 blacklistButton.style.width = "100px";
                 blacklistButton.style.height = "20px";
                 blacklistButton.style.marginLeft = "0px";
-                blacklistButton.style.marginRight = "140px";
+                blacklistButton.style.marginRight = "95px";
                 blacklistButton.style.marginTop = "0px";
                 blacklistButton.style.display = "flex";
                 blacklistButton.style.alignItems = "center";
@@ -1102,20 +1171,25 @@ async function downloadDataCSV() {
     const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
 
     const filterState = getFilterStateFromCookie().state;
-    const baseUrl = window.location.origin + '/logs/';
-    const fileName = filterState ? `SCANNER_${currentDate}_filtered.csv` : `SCANNER_${currentDate}.csv`;
-    const fileUrl = baseUrl + fileName;
+	const scannerState = getScannerStateFromCookie().state;
+	
+	if (scannerState) {
+	
+		const baseUrl = window.location.origin + '/logs/';
+		const fileName = filterState ? `SCANNER_${currentDate}_filtered.csv` : `SCANNER_${currentDate}.csv`;
+		const fileUrl = baseUrl + fileName;
 
-    // Check if the file exists
-    const fileExists = await checkFileExists(fileUrl);
-    if (fileExists) {
-        // If the file exists, download it
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = fileName;
-        link.click();
-        return; // Exit the function after initiating the download
-    }
+		// Check if the file exists
+		const fileExists = await checkFileExists(fileUrl);
+		if (fileExists) {
+			// If the file exists, download it
+			const link = document.createElement('a');
+			link.href = fileUrl;
+			link.download = fileName;
+			link.click();
+			return; // Exit the function after initiating the download
+		}
+	}
 
     // File does not exist, proceed to generate the CSV content
     try {
@@ -1175,20 +1249,25 @@ async function downloadDataHTML() {
     const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
 
     const filterState = getFilterStateFromCookie().state;
-    const baseUrl = window.location.origin + '/logs/';
-    const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
-    const fileUrl = baseUrl + fileName;
+	const scannerState = getScannerStateFromCookie().state;
+	
+	if (scannerState) {
+	
+		const baseUrl = window.location.origin + '/logs/';
+		const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
+		const fileUrl = baseUrl + fileName;
 
-    // Check if the file exists
-    const fileExists = await checkFileExists(fileUrl);
-    if (fileExists) {
-        // If the file exists, download it
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = fileName;
-        link.click();
-        return; // Exit the function after initiating the download
-    }
+		// Check if the file exists
+		const fileExists = await checkFileExists(fileUrl);
+		if (fileExists) {
+			// If the file exists, download it
+			const link = document.createElement('a');
+			link.href = fileUrl;
+			link.download = fileName;
+			link.click();
+			return; // Exit the function after initiating the download
+		}
+	}
 
     // File does not exist, proceed to generate the HTML content
     let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
@@ -1229,9 +1308,6 @@ async function downloadDataHTML() {
         window.URL.revokeObjectURL(link.href);
     }
 }
-
-
-
 
     })();
 })();
