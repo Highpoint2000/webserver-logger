@@ -6,7 +6,7 @@ This plugin provides logging functions for the FM-DX web server.
 ## Version 1.5 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
 - Alert message/filter for non-FMLIST compatible station IDs 
-- Logging optimizations (RDS RAW and filtered Modus)
+- Logging optimizations (RDS RAW and filtered mode)
 - HTML logs now open directly in the browser
 - Scanner log files (if available!) can be downloaded using CSV and HTML download buttons (Option for the button is in the scriptheader!)
 
