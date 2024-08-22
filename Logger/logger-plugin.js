@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.4a BETA)  ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5 BETA)   ///
 ///                                                      ///
 ///  by Highpoint                last update: 21.08.24   ///
 ///                                                      ///
@@ -10,10 +10,12 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
-const TestMode = 'false'; // 'false' is only for testing
-const plugin_version = 'V1.4a BETA'; // Plugin Version
+const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
+
+const TestMode = true; // Standard is 'false' - only for testings!!!
+const plugin_version = 'V1.5 BETA'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -292,11 +294,13 @@ if (TestMode === 'true') {
             if (FilterButton instanceof Node) {
                 ButtonsContainer.appendChild(FilterButton);
             }
-
-			const ScannerButton = setupScannerButton();
-            if (ScannerButton instanceof Node) {
-                ButtonsContainer.appendChild(ScannerButton);
-            }
+			
+			if (ScannerButtonView) {
+				const ScannerButton = setupScannerButton();
+				if (ScannerButton instanceof Node) {
+					ButtonsContainer.appendChild(ScannerButton);
+				}
+			}
 
             const blacklistButton = setupBlacklistButton();
             if (blacklistButton instanceof Node) {
@@ -612,14 +616,17 @@ if (TestMode === 'true') {
 		
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
+									FilteredlogDataArray[FilteredlogDataArray.length +1] = outputArray;
 								}	
-
-								const lastOutputDiv = dataCanvas.lastChild;
-								lastOutputDiv.textContent = outputText;
-								FilteredlogDataArray[FilteredlogDataArray.length +1] = outputArray;
-							}
 								
-							
+								if (!picode.includes('??')) {
+									const lastOutputDiv = dataCanvas.lastChild;
+									lastOutputDiv.textContent = outputText;
+								}
+								
+
+							}
+													
 						}
 
 						if (!picode.includes('??') && !ps.includes('?')) {
@@ -629,10 +636,11 @@ if (TestMode === 'true') {
 								const lastOutputDiv = dataCanvas.lastChild;
 								lastOutputDiv.textContent = outputText;
 								SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
+								FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArray;
 								
 							}
 							
-							FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArray;
+
 
 						}
 						
@@ -873,8 +881,7 @@ function toggleLogger() {
                 FilterButton = document.createElement("button");
                 FilterButton.id = "Filter-button";
                 FilterButton.style.width = "100px";
-                FilterButton.style.height = "20px";
-                FilterButton.style.marginLeft = "-310px";
+                FilterButton.style.height = "20px";               
                 FilterButton.style.marginRight = "5px";
                 FilterButton.style.marginTop = "0px";
                 FilterButton.style.display = "flex";
@@ -882,6 +889,13 @@ function toggleLogger() {
                 FilterButton.style.justifyContent = "center";
                 FilterButton.style.borderRadius = '0px';
                 FilterButton.style.fontWeight = "bold";
+
+				if (ScannerButtonView) {
+					FilterButton.style.marginLeft = "-310px";
+				} else {
+					FilterButton.style.marginLeft = "-250px";
+				}
+
                 FilterButton.addEventListener("click", () => {
                     const newState = !getFilterStateFromCookie().state;
                     setFilterStateInCookie({ state: newState });
@@ -927,12 +941,12 @@ function toggleLogger() {
                 button.style.pointerEvents = "auto"; // Enable hover effect
             }
         }
-
+		
 		// Setup Scanner button and state
         function setupScannerButton() {
             let ScannerButton = document.getElementById("Scanner-button");
             const ScannerState = getScannerStateFromCookie();
-
+			
             if (!ScannerButton) {
                 ScannerButton = document.createElement("button");
                 ScannerButton.id = "Scanner-button";
@@ -973,13 +987,19 @@ function toggleLogger() {
                 blacklistButton.style.width = "100px";
                 blacklistButton.style.height = "20px";
                 blacklistButton.style.marginLeft = "0px";
-                blacklistButton.style.marginRight = "95px";
                 blacklistButton.style.marginTop = "0px";
                 blacklistButton.style.display = "flex";
                 blacklistButton.style.alignItems = "center";
                 blacklistButton.style.justifyContent = "center";
                 blacklistButton.style.borderRadius = '0px';
                 blacklistButton.style.fontWeight = "bold";
+
+				if (ScannerButtonView) {
+					blacklistButton.style.marginRight = "95px";
+				} else {
+					blacklistButton.style.marginRight = "145px";
+				}
+
                 blacklistButton.addEventListener("click", () => {
                     const newState = !getBlacklistStateFromCookie().state;
                     setBlacklistStateInCookie({ state: newState });
@@ -1174,7 +1194,7 @@ async function downloadDataCSV() {
 	const scannerState = getScannerStateFromCookie().state;
 	
 	if (scannerState) {
-	
+
 		const baseUrl = window.location.origin + '/logs/';
 		const fileName = filterState ? `SCANNER_${currentDate}_filtered.csv` : `SCANNER_${currentDate}.csv`;
 		const fileUrl = baseUrl + fileName;
@@ -1182,12 +1202,12 @@ async function downloadDataCSV() {
 		// Check if the file exists
 		const fileExists = await checkFileExists(fileUrl);
 		if (fileExists) {
-			// If the file exists, download it
-			const link = document.createElement('a');
-			link.href = fileUrl;
-			link.download = fileName;
-			link.click();
-			return; // Exit the function after initiating the download
+			// If the file exists, open the link in a new tab
+			window.open(fileUrl, '_blank');
+			return; // Exit the function after opening the link
+		} else {
+			alert('File not exist: ' + fileUrl);
+			return; // Exit the function after alert message
 		}
 	}
 
@@ -1252,7 +1272,7 @@ async function downloadDataHTML() {
 	const scannerState = getScannerStateFromCookie().state;
 	
 	if (scannerState) {
-	
+
 		const baseUrl = window.location.origin + '/logs/';
 		const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
 		const fileUrl = baseUrl + fileName;
@@ -1260,14 +1280,15 @@ async function downloadDataHTML() {
 		// Check if the file exists
 		const fileExists = await checkFileExists(fileUrl);
 		if (fileExists) {
-			// If the file exists, download it
-			const link = document.createElement('a');
-			link.href = fileUrl;
-			link.download = fileName;
-			link.click();
-			return; // Exit the function after initiating the download
+			// If the file exists, open the link in a new tab
+			window.open(fileUrl, '_blank');
+			return; // Exit the function after opening the link
+		} else {
+			alert('File not exist: ' + fileUrl);
+			return; // Exit the function after alert message
 		}
-	}
+}
+
 
     // File does not exist, proceed to generate the HTML content
     let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
@@ -1296,17 +1317,25 @@ async function downloadDataHTML() {
 
     const blob = new Blob([allData], { type: "text/html" });
 
-    if (window.navigator.msSaveOrOpenBlob) {
-        // For IE browser
-        window.navigator.msSaveOrOpenBlob(blob, filename);
-    } else {
-        // For other browsers
-        const link = document.createElement("a");
-        link.href = window.URL.createObjectURL(blob);
-        link.download = filename;
-        link.click();
-        window.URL.revokeObjectURL(link.href);
-    }
+	if (window.navigator.msSaveOrOpenBlob) {
+		// For IE browser
+		window.navigator.msSaveOrOpenBlob(blob, filename);
+	} else {
+		// For other browsers
+		const url = window.URL.createObjectURL(blob);
+    
+		// Create a new link element
+		const link = document.createElement("a");
+		link.href = url;
+		link.target = "_blank"; // Open the file in a new tab
+		link.click();
+    
+		// For file types that are viewable directly in new tabs (e.g., PDFs)
+		// Sometimes it's necessary to explicitly open the tab
+		window.open(url, '_blank');
+    
+		window.URL.revokeObjectURL(url);
+	}
 }
 
     })();
