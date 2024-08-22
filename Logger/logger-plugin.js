@@ -633,7 +633,7 @@ if (TestMode === 'true') {
 													
 						}
 
-						if (!picode.includes('??') && !picode.includes('???') && !ps.includes('?')) {
+						if (!picode.includes('??') && !picode.includes('???')) {
 				
 							if (FilterState) { 	
 				
