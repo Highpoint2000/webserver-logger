@@ -588,9 +588,11 @@ if (TestMode === 'true') {
 			stationid = (data.stationid);
 
         }
+
                 const outputText = station 
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
+
 
                 let outputArray = station 
                     ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
@@ -609,6 +611,7 @@ if (TestMode === 'true') {
                         newOutputDiv.style.fontSize = "16px";
                         newOutputDiv.style.marginBottom = "-1px";
                         newOutputDiv.style.padding = "0 10px";
+						let lastOutputArray;
 														
 						if (NewLine === 'true') {						
 		
@@ -616,20 +619,21 @@ if (TestMode === 'true') {
 		
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
-									FilteredlogDataArray[FilteredlogDataArray.length +1] = outputArray;
 								}	
 								
-								if (!picode.includes('??')) {
+								if (!picode.includes('??') && !picode.includes('???')) {
 									const lastOutputDiv = dataCanvas.lastChild;
 									lastOutputDiv.textContent = outputText;
-								}
+									lastOutputArray = outputArray;
+								}							
 								
+								FilteredlogDataArray[FilteredlogDataArray.length +1] = lastOutputArray
 
 							}
 													
 						}
 
-						if (!picode.includes('??') && !ps.includes('?')) {
+						if (!picode.includes('??') && !picode.includes('???') && !ps.includes('?')) {
 				
 							if (FilterState) { 	
 				
