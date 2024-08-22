@@ -14,7 +14,7 @@ const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const ScannerButtonView = false; // Set to 'true' to get a button that activates the download links to the scanner files
 
-const TestMode = true; // Standard is 'false' - only for testings!!!
+const TestMode = false; // Standard is 'false' - only for testings!!!
 const plugin_version = 'V1.5 BETA'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -82,6 +82,8 @@ if (TestMode === 'true') {
         let Savestation = '';
 		let Savestationid = '';
 		let Saveps = '';
+		let dateFilter = '';
+		let timeFilter = '';
 
         console.log('ServerName:', ServerName);
         console.log('ServerDescription:', ServerDescription);
@@ -519,16 +521,20 @@ if (TestMode === 'true') {
         // Function to display extracted data
         async function displayExtractedData() {
             const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
+			const now = new Date();
+			const date = formatDate(now);
+			const time = formatTime(now);
 
             if (currentFrequency !== previousFrequency) {
                 previousFrequency = currentFrequency;
                 NewLine = 'true';
                 id = '';
+				dateFilter = formatDate(now);
+				timeFilter = formatTime(now);
             }
             
-            const now = new Date();
-            const date = formatDate(now);
-            const time = formatTime(now);
+
+
             const currentFrequencyWithSpaces = padLeftWithSpaces(currentFrequency, 7);
             const data = previousDataByFrequency[currentFrequency];
 
@@ -593,10 +599,18 @@ if (TestMode === 'true') {
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
+                const outputTextFilter = station 
+                    ? `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
+                    : `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
                 let outputArray = station 
                     ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
                     : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
+
+                let outputArrayFilter = station 
+                    ? `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
+                    : `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
+
 
                 if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
 
@@ -613,38 +627,28 @@ if (TestMode === 'true') {
                         newOutputDiv.style.padding = "0 10px";
 						let lastOutputArray;
 														
-						if (NewLine === 'true' || picode !== Savepicode && !picode.includes('??') && !picode.includes('???')) {						
-		
-							if (FilterState) { 	
-		
+						if (FilterState && (NewLine === 'true' || picode !== Savepicode && !picode.includes('??') && !picode.includes('???'))) {						
+
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
 								}	
 								
 								if (!picode.includes('??') && !picode.includes('???')) {
 									const lastOutputDiv = dataCanvas.lastChild;
-									lastOutputDiv.textContent = outputText;
-									lastOutputArray = outputArray;
+									lastOutputDiv.textContent = outputTextFilter;
+									lastOutputArray = outputArrayFilter;
 								}							
 								
 								FilteredlogDataArray[FilteredlogDataArray.length +1] = lastOutputArray
-
-							}
-													
+												
 						}
 
-						if (!picode.includes('??') && !picode.includes('???')) {
-				
-							if (FilterState) { 	
-				
+						if (FilterState && !picode.includes('??') && !picode.includes('???')) {
+						
 								const lastOutputDiv = dataCanvas.lastChild;
-								lastOutputDiv.textContent = outputText;
+								lastOutputDiv.textContent = outputTextFilter;
 								SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
-								FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArray;
-								
-							}
-							
-
+								FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArrayFilter;
 
 						}
 						
