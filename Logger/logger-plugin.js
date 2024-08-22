@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5)   ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5)	     ///
 ///                                                      ///
 ///  by Highpoint                last update: 22.08.24   ///
 ///                                                      ///
@@ -12,10 +12,10 @@
 
 const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
-const ScannerButtonView = false; // Set to 'true' to get a button that activates the download links to the scanner files
+const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
 
 const TestMode = false; // Standard is 'false' - only for testings!!!
-const plugin_version = 'V1.5 BETA'; // Plugin Version
+const plugin_version = 'V1.5'; // Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -84,6 +84,7 @@ if (TestMode === 'true') {
 		let Saveps = '';
 		let dateFilter = '';
 		let timeFilter = '';
+		let picode_clean = '';
 
         console.log('ServerName:', ServerName);
         console.log('ServerDescription:', ServerDescription);
@@ -524,17 +525,7 @@ if (TestMode === 'true') {
 			const now = new Date();
 			const date = formatDate(now);
 			const time = formatTime(now);
-
-            if (currentFrequency !== previousFrequency) {
-                previousFrequency = currentFrequency;
-                NewLine = 'true';
-                id = '';
-				dateFilter = formatDate(now);
-				timeFilter = formatTime(now);
-            }
-            
-
-
+          
             const currentFrequencyWithSpaces = padLeftWithSpaces(currentFrequency, 7);
             const data = previousDataByFrequency[currentFrequency];
 
@@ -592,10 +583,20 @@ if (TestMode === 'true') {
             picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
             ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
 			stationid = (data.stationid);
+			picode_clean = (data.picode);
 
         }
 		
-				if (picode.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '')) {								
+		        if (currentFrequency !== previousFrequency) {
+					previousFrequency = currentFrequency;
+					NewLine = 'true';
+					id = '';
+					dateFilter = formatDate(now);
+					timeFilter = formatTime(now);
+					Savepicode = picode_clean;
+				}
+			
+				if (picode_clean.replace(/\?/g, '') !== picode_clean.replace(/\?/g, '')) {								
 					dateFilter = formatDate(now);
 					timeFilter = formatTime(now);
 				}
@@ -633,7 +634,7 @@ if (TestMode === 'true') {
                         newOutputDiv.style.padding = "0 10px";
 						let lastOutputArray;
 														
-						if (FilterState && (NewLine === 'true' || picode.replace(/\?/g, '') !== Savepicode.replace(/\?/g, ''))) {		
+						if (FilterState && (NewLine === 'true' || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== ''))) {		
 
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
@@ -646,10 +647,11 @@ if (TestMode === 'true') {
 								}							
 								
 								FilteredlogDataArray[FilteredlogDataArray.length +1] = lastOutputArray
+								NewLine = 'false'; 
 												
 						}
 
-						if (FilterState && !picode.includes('??') && !picode.includes('???')) {
+						if (FilterState && (ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???')) {
 						
 								const lastOutputDiv = dataCanvas.lastChild;
 								lastOutputDiv.textContent = outputTextFilter;
@@ -659,7 +661,7 @@ if (TestMode === 'true') {
 
 						}
 						
-						if (NewLine === 'true' || Savepicode !== picode || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
+						if (NewLine === 'true' || Savepicode !== picode_clean || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
 							
 							if (!FilterState) {
 						
@@ -672,11 +674,12 @@ if (TestMode === 'true') {
 							}
 							
 							logDataArray[logDataArray.length +1] = outputArray;	
+							NewLine = 'false'; 
 				
 						}
 											
-						NewLine = 'false'; 
-                        Savepicode = picode;
+						
+                        Savepicode = picode_clean;
                         Savestation = station;
 						Savestationid = stationid;
 						Saveps = ps;
