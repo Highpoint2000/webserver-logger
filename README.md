@@ -8,6 +8,7 @@ This plugin provides logging functions for the FM-DX web server.
 - Alert message/filter for non-FMLIST compatible station IDs 
 - Logging optimizations
 - Scanner log files (if available) can be downloaded using CSV and HTML download buttons
+- HTML logs now open directly in the browser
 
 ## Installation notes:
 
