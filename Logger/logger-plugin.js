@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5 BETA)   ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5)   ///
 ///                                                      ///
 ///  by Highpoint                last update: 22.08.24   ///
 ///                                                      ///
@@ -594,6 +594,12 @@ if (TestMode === 'true') {
 			stationid = (data.stationid);
 
         }
+		
+				if (picode.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '')) {								
+					dateFilter = formatDate(now);
+					timeFilter = formatTime(now);
+				}
+		
 
                 const outputText = station 
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
@@ -627,14 +633,14 @@ if (TestMode === 'true') {
                         newOutputDiv.style.padding = "0 10px";
 						let lastOutputArray;
 														
-						if (FilterState && (NewLine === 'true' || picode !== Savepicode && !picode.includes('??') && !picode.includes('???'))) {						
+						if (FilterState && (NewLine === 'true' || picode.replace(/\?/g, '') !== Savepicode.replace(/\?/g, ''))) {		
 
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
 								}	
 								
 								if (!picode.includes('??') && !picode.includes('???')) {
-									const lastOutputDiv = dataCanvas.lastChild;
+									const lastOutputDiv = dataCanvas.lastChild;							
 									lastOutputDiv.textContent = outputTextFilter;
 									lastOutputArray = outputArrayFilter;
 								}							
@@ -647,23 +653,28 @@ if (TestMode === 'true') {
 						
 								const lastOutputDiv = dataCanvas.lastChild;
 								lastOutputDiv.textContent = outputTextFilter;
-								SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
 								FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArrayFilter;
+								SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
+
 
 						}
 						
-						if (!FilterState && (NewLine === 'true' || Savepicode !== picode || Savestation !== station && station !== '' || Saveps !== ps && ps !== '')) {
+						if (NewLine === 'true' || Savepicode !== picode || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
+							
+							if (!FilterState) {
 						
-							if (dataCanvas instanceof Node) {
-								dataCanvas.appendChild(newOutputDiv);
+								if (dataCanvas instanceof Node) {
+									dataCanvas.appendChild(newOutputDiv);
+								}
+							
+								const lastOutputDiv = dataCanvas.lastChild;
+								lastOutputDiv.textContent = outputText;	
 							}
 							
-							const lastOutputDiv = dataCanvas.lastChild;
-							lastOutputDiv.textContent = outputText;
-							logDataArray[logDataArray.length +1] = outputArray;				
+							logDataArray[logDataArray.length +1] = outputArray;	
 				
 						}
-						
+											
 						NewLine = 'false'; 
                         Savepicode = picode;
                         Savestation = station;
