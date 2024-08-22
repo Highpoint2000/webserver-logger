@@ -613,7 +613,7 @@ if (TestMode === 'true') {
                         newOutputDiv.style.padding = "0 10px";
 						let lastOutputArray;
 														
-						if (NewLine === 'true') {						
+						if (NewLine === 'true' || picode !== Savepicode && !picode.includes('??') && !picode.includes('???')) {						
 		
 							if (FilterState) { 	
 		
