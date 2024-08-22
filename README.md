@@ -3,11 +3,11 @@ This plugin provides logging functions for the FM-DX web server.
 
 ![image](https://github.com/user-attachments/assets/83ad1a0c-ada6-4036-ada6-0d80962132e1)
 
-## Version 1.4a BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
+## Version 1.5 BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
 - Alert message/filter for non-FMLIST compatible station IDs 
-- Logging optimizations (for MS)
-- Scanner log files (if available) can be downloaded using CSV and HTML buttons
+- Logging optimizations
+- Scanner log files (if available) can be downloaded using CSV and HTML download buttons
 
 ## Installation notes:
 
@@ -18,8 +18,7 @@ This plugin provides logging functions for the FM-DX web server.
 
 ## Notes: 
 
-If the logging plugin is activated, logging in the background will automatically start after every website reload. Pressing the DATA LOGGER toggle button switches the screen from the signal display to the logging tool. The real-time mode logs the current data set (prerequisite: PI code must be read in) in a constantly updated list. You can scroll through the logs using the scroll bar on the right. You can download the current logging list in the appropriate format using the CSV or HTML button. A stored list of frequency exclusions can be activated and deactivated using the “Blacklist” button.* The FILTER button either only records identified logs (i.e. with TX information) or sorts the standard log list by frequency and filters out excess entries Filter is activated before downloading the log lists.  You can use the FMDX button to display the current transmission location graphically on a map. If you have an account at fmlist.org, you can either use the FMLIST button to transfer the current log or later transfer the logs from the logs to your FMLIST logbook. To do this, you must enter your OM ID once in the logger-plugin.js before accessing the web server and log in with your access data at https://fmlist.org. Only then will the link work! If the horizontal scroll bar appears undesirably, please increase the screen limit variable from 1180 to 1185 in the script.
-
+If the logging plugin is activated, logging starts automatically in the background every time the website is reloaded. Pressing the DATA LOGGER shift key switches the screen from the signal display to the logging tool. The real-time mode logs the current data record in a constantly updating list (requirement: PI code must be read in). You can scroll through the logs using the scroll bar on the right. You can download the current logging list in the appropriate format using the CSV or HTML button. A stored list of frequency exclusions can be activated and deactivated using the “Blacklist” button.* The FILTER button only displays identified protocols (i.e. with TX information) and filters out excess entries. If the filter button is activated before the download, it enables the download of the filtered protocol lists. You can display an additional button using the “ScannerButtonView” switch. If this is activated, the downloads will be linked to the scanner log files.  You can use the FMDX button to display the current broadcast location graphically on a map. If you have an account with fmlist.org, you can either use the FMLIST button to transfer the current log or later transfer the logs from the logs to your FMLIST logbook. To do this, you must enter your OM ID once in the logger-plugin.js before accessing the web server and log in with your access data at https://fmlist.org. Only then will the link work! If the horizontal scroll bar seems undesirable, please increase the screen limit variable from 1180 to 1185 in the script.
 (*) In order to use the blacklist button and option, a file /web/logger/blacklist.txt must be created. For example, the frequencies that should not be logged must be: 89,800 89,400 100.80 ... They can be written next to or below each other with spaces.
 
 Users who also use the Extended Description plugin should download the modified version from here, where the buttons are displayed in one line: https://github.com/Highpoint2000/Extended-Description-plugin-MOD-by-Highpoint-
