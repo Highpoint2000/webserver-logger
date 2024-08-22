@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5 BETA)   ///
 ///                                                      ///
-///  by Highpoint                last update: 21.08.24   ///
+///  by Highpoint                last update: 22.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,9 +10,9 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = '8082'; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
-const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
+const ScannerButtonView = false; // Set to 'true' to get a button that activates the download links to the scanner files
 
 const TestMode = true; // Standard is 'false' - only for testings!!!
 const plugin_version = 'V1.5 BETA'; // Plugin Version
