@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.5)	     ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6 BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 22.08.24   ///
+///  by Highpoint                last update: 26.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,12 +10,13 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = ''; // To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
-const Screen = ''; // If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
+const FMLIST_OM_ID = '; 	// To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const Screen = ''; 				// If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
+const UTCtime = false; 			// Set to "true" for logging with UTC Time
 
-const TestMode = false; // Standard is 'false' - only for testings!!!
-const plugin_version = 'V1.5'; // Plugin Version
+const TestMode = false; 				// Standard is 'false' - only for testings!!!
+const plugin_version = 'V1.6 BETA'; 	// Plugin Version
 
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -205,14 +206,24 @@ if (TestMode === 'true') {
 
         // Create and configure title div
         const titleDiv = document.createElement("div");
-
-        if (Screen === 'ultrasmall') {
-            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
-        } else if (Screen === 'small') {
-            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
-        } else {
-            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
-        }
+		
+		if (UTCtime) {
+			if (Screen === 'ultrasmall') {
+				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
+			} else if (Screen === 'small') {
+				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
+			} else {
+				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+			}
+		} else {
+			if (Screen === 'ultrasmall') {
+				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
+			} else if (Screen === 'small') {
+				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
+			} else {
+				titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+			}
+		}
 
         titleDiv.style.padding = "10px";
         titleDiv.style.display = "block"; // Allow block display to stack elements vertically
@@ -524,8 +535,12 @@ if (TestMode === 'true') {
             const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
 			const now = new Date();
 			const date = formatDate(now);
-			const time = formatTime(now);
-          
+			let time = formatTime(now);
+			
+			if (UTCtime) {
+				time = getCurrentUTC(); // time in UTC
+			}
+		  
             const currentFrequencyWithSpaces = padLeftWithSpaces(currentFrequency, 7);
             const data = previousDataByFrequency[currentFrequency];
 
@@ -592,16 +607,23 @@ if (TestMode === 'true') {
 					NewLine = 'true';
 					id = '';
 					dateFilter = formatDate(now);
-					timeFilter = formatTime(now);
+					if (UTCtime) {
+						timeFilter = getCurrentUTC(); // time in UTC
+					} else {
+						timeFilter = formatTime(now);
+					}
 					Savepicode = picode_clean;
 				}
 			
 				if (picode_clean.replace(/\?/g, '') !== picode_clean.replace(/\?/g, '')) {								
-					dateFilter = formatDate(now);
-					timeFilter = formatTime(now);
+					dateFilter = formatDate(now);				
+					if (UTCtime) {
+						timeFilter = getCurrentUTC(); // time in UTC
+					} else {
+						timeFilter = formatTime(now);
+					}
 				}
-		
-
+				
                 const outputText = station 
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
@@ -634,15 +656,18 @@ if (TestMode === 'true') {
                         newOutputDiv.style.padding = "0 10px";
 						let lastOutputArray;
 														
-						if (FilterState && (NewLine === 'true' || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== ''))) {		
+						if (NewLine === 'true' || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== '')) {		
 
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
-								}	
+								}
+								
 								
 								if (!picode.includes('??') && !picode.includes('???')) {
-									const lastOutputDiv = dataCanvas.lastChild;							
-									lastOutputDiv.textContent = outputTextFilter;
+									if (FilterState) {
+										const lastOutputDiv = dataCanvas.lastChild;							
+										lastOutputDiv.textContent = outputTextFilter;
+									}
 									lastOutputArray = outputArrayFilter;
 								}							
 								
@@ -651,13 +676,15 @@ if (TestMode === 'true') {
 												
 						}
 
-						if (FilterState && (ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???')) {
+						if ((ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???')) {
 						
+							if (FilterState) {							
 								const lastOutputDiv = dataCanvas.lastChild;
 								lastOutputDiv.textContent = outputTextFilter;
-								FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArrayFilter;
-								SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
-
+							}	
+								
+							FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArrayFilter;
+							SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
 
 						}
 						
@@ -1238,8 +1265,11 @@ async function downloadDataCSV() {
         // Initialize CSV data with headers and metadata
         let allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\n`;
         allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\n` : `RDS-LOGGER ${currentDate} ${currentTime}\n\n`;
-        allData += 'date;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n';
-
+		
+		allData += UTCtime 
+        ? 'date;time(utc);freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n' 
+        : 'date;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n' 
+		
         // Determine which data array to use based on FilterState
         const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
 
@@ -1291,31 +1321,33 @@ async function downloadDataHTML() {
     const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
 
     const filterState = getFilterStateFromCookie().state;
-	const scannerState = getScannerStateFromCookie().state;
+    const scannerState = getScannerStateFromCookie().state;
+
+    if (scannerState) {
+        const baseUrl = window.location.origin + '/logs/';
+        const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
+        const fileUrl = baseUrl + fileName;
+
+        const fileExists = await checkFileExists(fileUrl);
+        if (fileExists) {
+            window.open(fileUrl, '_blank');
+            return;
+        } else {
+            alert('File not exist: ' + fileUrl);
+            return;
+        }
+    }
 	
-	if (scannerState) {
+    let allData = htmlTemplate;
 
-		const baseUrl = window.location.origin + '/logs/';
-		const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
-		const fileUrl = baseUrl + fileName;
+    allData += `${ServerName}<br>${ServerDescription}<br>`;
+    allData += filterState 
+        ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` 
+        : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`; 
 
-		// Check if the file exists
-		const fileExists = await checkFileExists(fileUrl);
-		if (fileExists) {
-			// If the file exists, open the link in a new tab
-			window.open(fileUrl, '_blank');
-			return; // Exit the function after opening the link
-		} else {
-			alert('File not exist: ' + fileUrl);
-			return; // Exit the function after alert message
-		}
-}
-
-
-    // File does not exist, proceed to generate the HTML content
-    let allData = `<html><head><title>RDS Logger</title></head><body><pre>${ServerName}<br>${ServerDescription.replace(/\n/g, "<br>")}<br>`;
-    allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
-    allData += `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
+    allData += UTCtime 
+        ? `<table border="1"><tr><th>DATE</th><th>TIME(UTC)</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>` 
+        : `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>FMDX</th><th>FMLIST</th></tr>`;
 
     // Use filteredLogDataArray if filter is active, otherwise use logDataArray
     const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
@@ -1328,8 +1360,8 @@ async function downloadDataHTML() {
 
         let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
 
-        let link1 = id !== '' ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
-        let link2 = id !== '' && id > 0 ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
+        let link1 = id ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
+        let link2 = id && id > 0 ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
         allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
     });
@@ -1339,26 +1371,319 @@ async function downloadDataHTML() {
 
     const blob = new Blob([allData], { type: "text/html" });
 
-	if (window.navigator.msSaveOrOpenBlob) {
-		// For IE browser
-		window.navigator.msSaveOrOpenBlob(blob, filename);
-	} else {
-		// For other browsers
-		const url = window.URL.createObjectURL(blob);
+    if (window.navigator.msSaveOrOpenBlob) {
+        window.navigator.msSaveOrOpenBlob(blob, filename);
+    } else {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.click();
+        window.URL.revokeObjectURL(url);
+    }
+}
+
+function getCurrentUTC() {
+    // Hole die aktuelle Zeit in UTC
+    const now = new Date();
     
-		// Create a new link element
-		const link = document.createElement("a");
-		link.href = url;
-		link.target = "_blank"; // Open the file in a new tab
-		link.click();
+    // Extrahiere die UTC-Stunden, -Minuten und -Sekunden
+    const hours = String(now.getUTCHours()).padStart(2, '0');
+    const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(now.getUTCSeconds()).padStart(2, '0');
     
-		// For file types that are viewable directly in new tabs (e.g., PDFs)
-		// Sometimes it's necessary to explicitly open the tab
-		window.open(url, '_blank');
-    
-		window.URL.revokeObjectURL(url);
-	}
+    // Formatiere die Zeit im HH:MM:SS-Format
+    const utcTime = `${hours}:${minutes}:${seconds}`;
+
+    return utcTime;
 }
 
     })();
 })();
+
+const htmlTemplate = `
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCANNER LOG [FILTER MODE]</title>
+    <style>
+        /* Container for the search and refresh controls */
+        #controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Flexible area for the search input */
+        #searchContainer {
+            flex: 1;
+        }
+
+        /* Styling for the search input */
+        #searchInput {
+            padding: 5px;
+            width: 100%;
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+
+        /* Container for the buttons */
+        #buttonContainer {
+            display: flex;
+            align-items: center;
+        }
+
+        /* Styling for the buttons */
+        .button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            margin-left: 10px; /* Space between buttons */
+        }
+
+        /* Styling for the dark mode button */
+        #darkModeButton {
+            background-color: #6c757d;
+        }
+
+        /* Dark mode styling */
+        body.dark-mode {
+            background-color: #121212;
+            color: white;
+        }
+
+        body.dark-mode table {
+            color: white;
+        }
+
+        body.dark-mode th {
+            background-color: #1f1f1f;
+        }
+
+        body.dark-mode td {
+            border-color: #333;
+        }
+
+        /* Make table headers clickable */
+        th {
+            cursor: pointer;
+        }
+
+        /* Table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto; /* Ensure columns are auto-sized */
+        }
+
+        /* Styling for table cells */
+        th, td {
+            padding: 3px;
+            text-align: left;
+            white-space: nowrap; /* Prevents text from wrapping */
+        }
+
+        /* Background color for table headers */
+        th {
+            background-color: #f2f2f2;
+        }
+        
+        /* Dark mode styling for links */
+        body.dark-mode a {
+            color: #d6a8f5; /* Light purple color */
+        }
+
+        body.dark-mode a:hover {
+            color: #b57edc; /* Slightly darker purple for hover effect */
+        }
+        
+        /* Dark mode styling for the search input */
+        body.dark-mode #searchInput {
+            background-color: #6c757d; /* Match the color of the dark mode toggle button */
+            color: white; /* Ensure text is readable */
+        }
+
+        /* Dark mode styling for the search input placeholder */
+        body.dark-mode #searchInput::placeholder {
+            color: white; /* Light gray placeholder text for better readability */
+        }   
+    </style>
+    <script>
+        /* Get the value of a cookie by name */
+        function getCookie(name) {
+            const cookieName = name + "=";
+            const cookies = decodeURIComponent(document.cookie).split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                let cookie = cookies[i];
+                while (cookie.charAt(0) === ' ') {
+                    cookie = cookie.substring(1);
+                }
+                if (cookie.indexOf(cookieName) === 0) {
+                    return cookie.substring(cookieName.length, cookie.length);
+                }
+            }
+            return "";
+        }
+
+        /* Set a cookie with a specific name, value, and expiration (in days) */
+        function setCookie(name, value, days) {
+            const expires = "expires=" + new Date(Date.now() + days * 864e5).toUTCString();
+            document.cookie = name + "=" + value + ";" + expires + ";path=/";
+        }
+
+        /* Sorts the table based on column index (n) */
+        function sortTable(n, isNumeric = false) {
+            const table = document.querySelector("table");
+            let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            switching = true;
+            dir = "asc";
+
+            /* Keep switching rows until sorting is complete */
+            while (switching) {
+                switching = false;
+                rows = table.rows;
+
+                /* Loop through the rows, skipping the header */
+                for (i = 1; i < (rows.length - 1); i++) {
+                    shouldSwitch = false;
+                    x = rows[i].getElementsByTagName("TD")[n];
+                    y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                    /* Compare based on numeric or string content */
+                    let xContent = isNumeric ? parseFloat(x.innerHTML) || 0 : x.innerHTML.toLowerCase();
+                    let yContent = isNumeric ? parseFloat(y.innerHTML) || 0 : y.innerHTML.toLowerCase();
+
+                    /* Determine if a switch is needed based on direction */
+                    if (dir == "asc") {
+                        if (xContent > yContent) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (xContent < yContent) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+                if (shouldSwitch) {
+                    /* Make the switch and mark switching as true */
+                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                    switching = true;
+                    switchcount++;
+                } else {
+                    /* If no switching happened, change the direction */
+                    if (switchcount == 0 && dir == "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
+                }
+            }
+        }
+
+        /* Filters table rows based on input value */
+        function filterTable() {
+            const input = document.getElementById("searchInput");
+            const filter = input.value.toLowerCase();
+            const table = document.querySelector("table");
+            const tr = table.getElementsByTagName("tr");
+
+            /* Loop through all table rows */
+            for (let i = 1; i < tr.length; i++) {
+                let td = tr[i].getElementsByTagName("td");
+                let display = false;
+                for (let j = 0; j < td.length; j++) {
+                    /* Check if any cell contains the filter text */
+                    if (td[j].textContent.toLowerCase().indexOf(filter) > -1) {
+                        display = true;
+                        break;
+                    }
+                }
+                /* Show or hide the row based on the filter */
+                tr[i].style.display = display ? "" : "none";
+            }
+        }
+
+        /* Toggle Dark Mode */
+        function toggleDarkMode() {
+            const body = document.body;
+            const isDarkMode = body.classList.toggle("dark-mode");
+            setCookie("darkMode", isDarkMode, 365); // Save preference for 1 year
+        }
+
+        /* Apply Dark Mode based on cookie */
+        function applyDarkMode() {
+            const darkMode = getCookie("darkMode");
+            if (darkMode === "true") {
+                document.body.classList.add("dark-mode");
+            }
+        }
+
+        /* Initializes controls on DOMContentLoaded */
+        document.addEventListener('DOMContentLoaded', () => {
+            applyDarkMode(); // Apply Dark Mode preference
+
+            const controlsContainer = document.createElement('div');
+            controlsContainer.id = 'controls';
+
+            /* Create and append the search input container */
+            const searchContainer = document.createElement('div');
+            searchContainer.id = 'searchContainer';
+
+            const searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.id = 'searchInput';
+            searchInput.placeholder = 'Search table ...';
+            searchInput.onkeyup = filterTable;
+            searchContainer.appendChild(searchInput);
+
+            controlsContainer.appendChild(searchContainer);
+
+            /* Create and append the button container */
+            const buttonContainer = document.createElement('div');
+            buttonContainer.id = 'buttonContainer';
+
+            /* Create and append the dark mode button */
+            const darkModeButton = document.createElement('button');
+            darkModeButton.id = 'darkModeButton';
+            darkModeButton.className = 'button';
+            darkModeButton.innerText = 'Toggle Dark Mode';
+            darkModeButton.addEventListener('click', toggleDarkMode);
+            buttonContainer.appendChild(darkModeButton);
+
+            /* Append the button container to the controls container */
+            controlsContainer.appendChild(buttonContainer);
+
+            /* Insert controls above the table */
+            document.body.insertBefore(controlsContainer, document.querySelector("pre"));
+
+            /* Add click event listeners to table headers for sorting */
+            const headers = document.querySelectorAll("th");
+            headers[1].addEventListener("click", () => sortTable(1)); // TIME(UTC)
+            headers[2].addEventListener("click", () => sortTable(2, true)); // FREQ
+            headers[3].addEventListener("click", () => sortTable(3)); // PI
+            headers[4].addEventListener("click", () => sortTable(4)); // PS
+            headers[5].addEventListener("click", () => sortTable(5)); // NAME
+            headers[6].addEventListener("click", () => sortTable(6)); // CITY
+            headers[7].addEventListener("click", () => sortTable(7)); // ITU
+            headers[8].addEventListener("click", () => sortTable(8)); // P
+            headers[9].addEventListener("click", () => sortTable(9, true)); // ERP
+            headers[10].addEventListener("click", () => sortTable(10, true)); // DIST
+            headers[11].addEventListener("click", () => sortTable(11, true)); // AZ
+            headers[12].addEventListener("click", () => sortTable(12)); // ID
+        });
+    </script>
+</head>
+<body>
+<pre></pre>
+</body>
+</html>
+`;
+
