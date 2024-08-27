@@ -7,6 +7,7 @@ This plugin provides logging functions for the FM-DX web server.
 
 - New layout for HTML logfile with search/sort Options, Toggle Button for dark mode
 - Time in Logfiles can be set to UTC
+- The filter mode is active at start
 
 ## Installation notes:
 
