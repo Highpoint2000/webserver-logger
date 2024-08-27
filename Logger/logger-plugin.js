@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6 BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 26.08.24   ///
+///  by Highpoint                last update: 27.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,7 +10,7 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = '; 	// To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = ''; 	// To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; 				// If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
 const UTCtime = false; 			// Set to "true" for logging with UTC Time
@@ -291,20 +291,11 @@ if (TestMode === 'true') {
             ButtonsContainer.className = "download-buttons-container";
             ButtonsContainer.style.display = "none";
             ButtonsContainer.style.position = "relative";
-            ButtonsContainer.style.marginLeft = "76.5%";
+            ButtonsContainer.style.marginLeft = "0px";
             ButtonsContainer.style.marginTop = "0px";
-
-            const FMLISTButton = createFMLISTButton();
-            if (FMLISTButton instanceof Node) {
-                ButtonsContainer.appendChild(FMLISTButton);
-            }
-
-            const FMDXButton = createFMDXButton();
-            if (FMDXButton instanceof Node) {
-                ButtonsContainer.appendChild(FMDXButton);
-            }
-
-            const FilterButton = setupFilterButton();
+			ButtonsContainer.style.textAlign = "left"; // Ensures left alignment
+			
+			const FilterButton = setupFilterButton();
             if (FilterButton instanceof Node) {
                 ButtonsContainer.appendChild(FilterButton);
             }
@@ -315,20 +306,30 @@ if (TestMode === 'true') {
 					ButtonsContainer.appendChild(ScannerButton);
 				}
 			}
-
-            const blacklistButton = setupBlacklistButton();
+			
+			const blacklistButton = setupBlacklistButton();
             if (blacklistButton instanceof Node) {
                 ButtonsContainer.appendChild(blacklistButton);
             }
 			
-            const DownloadButtonCSV = createDownloadButtonCSV();
+			const DownloadButtonCSV = createDownloadButtonCSV();
             if (DownloadButtonCSV instanceof Node) {
                 ButtonsContainer.appendChild(DownloadButtonCSV);
             }
-
-            const DownloadButtonHTML = createDownloadButtonHTML();
+			
+			const DownloadButtonHTML = createDownloadButtonHTML();
             if (DownloadButtonHTML instanceof Node) {
                 ButtonsContainer.appendChild(DownloadButtonHTML);
+            }
+			
+			const FMDXButton = createFMDXButton();
+            if (FMDXButton instanceof Node) {
+                ButtonsContainer.appendChild(FMDXButton);
+            }
+
+            const FMLISTButton = createFMLISTButton();
+            if (FMLISTButton instanceof Node) {
+                ButtonsContainer.appendChild(FMLISTButton);
             }
 
             if (parentContainer instanceof Node) {
@@ -339,6 +340,7 @@ if (TestMode === 'true') {
 		// Variable to track the window state
 		let FMDXWindow = null;
 		let isOpenFMDX = false;
+		
 
 		// Function to create the FMDX button and link it to the overlay
 		function createFMDXButton() {
@@ -347,8 +349,7 @@ if (TestMode === 'true') {
 			FMDXButton.textContent = "FMDX";
 			FMDXButton.style.width = "80px";
 			FMDXButton.style.height = "20px";
-			FMDXButton.style.marginRight = "-152%";
-			FMDXButton.style.marginLeft = "-25px";
+			FMDXButton.style.marginLeft = "140px";
 			FMDXButton.style.display = "flex";
 			FMDXButton.style.alignItems = "center";
 			FMDXButton.style.justifyContent = "center";
@@ -418,8 +419,8 @@ if (TestMode === 'true') {
 			const container = document.createElement("div");
 			container.style.width = "80px";
 			container.style.height = "20px";
-			container.style.marginRight = "-140px";
-			container.style.marginLeft = "-20px";
+			container.style.marginRight = "0px";
+			container.style.marginLeft = "5px";
 			container.style.display = "flex";
 			container.style.alignItems = "center";
 			container.style.justifyContent = "center";
@@ -793,7 +794,7 @@ function toggleLogger() {
             DownloadButtonHTML.style.width = "50px";
             DownloadButtonHTML.style.height = "20px";
             DownloadButtonHTML.style.marginLeft = "5px";
-			DownloadButtonHTML.style.marginRight = "310px";
+			DownloadButtonHTML.style.marginRight = "0px";
             DownloadButtonHTML.style.display = "flex";
             DownloadButtonHTML.style.alignItems = "center";
             DownloadButtonHTML.style.justifyContent = "center";
@@ -892,70 +893,84 @@ function toggleLogger() {
                 });
         }
 
-        // Retrieve Filter state from cookies
-        function getFilterStateFromCookie() {
-            const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Filter='));
-            return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: false };
-        }
+// Retrieve Filter state from cookies
+function getFilterStateFromCookie() {
+    const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Filter='));
+    return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: true }; // Default to active state
+}
 
-        // Set Filter state in cookies
-        function setFilterStateInCookie(state) {
-            document.cookie = `Filter=${JSON.stringify(state)}; path=/`;
-        }
+// Set Filter state in cookies
+function setFilterStateInCookie(state) {
+    document.cookie = `Filter=${JSON.stringify(state)}; path=/`;
+}
 
-        // Update Filter button appearance based on state
-        function updateFilterButton(button, state) {
-            if (!button) {
-                console.error('Filter button does not exist.');
-                return;
-            }
-            if (!state) {
-                button.textContent = "FILTER";
-                button.classList.remove('bg-color-4');
-                button.classList.add('bg-color-2');
+// Update Filter button appearance based on state
+function updateFilterButton(button, state) {
+    if (!button) {
+        console.error('Filter button does not exist.');
+        return;
+    }
+    if (!state) {
+        button.textContent = "FILTER";
+        button.classList.remove('bg-color-4');
+        button.classList.add('bg-color-2');
+    } else {
+        button.textContent = "FILTER";
+        button.classList.remove('bg-color-2');
+        button.classList.add('bg-color-4');
+        button.style.pointerEvents = "auto"; // Enable hover effect
+    }
+}
+
+// Setup Filter button and state
+function setupFilterButton() {
+    let FilterButton = document.getElementById("Filter-button");
+    const FilterState = getFilterStateFromCookie();
+
+    if (!FilterButton) {
+        FilterButton = document.createElement("button");
+        FilterButton.id = "Filter-button";
+        FilterButton.style.width = "100px";
+        FilterButton.style.height = "20px";               
+        FilterButton.style.marginTop = "0px";
+        FilterButton.style.display = "flex";
+        FilterButton.style.alignItems = "center";
+        FilterButton.style.justifyContent = "center";
+        FilterButton.style.borderRadius = '0px';
+        FilterButton.style.fontWeight = "bold";
+        
+        setTimeout(() => {
+            const ContainerAntenna = document.getElementById('Antenna');
+            if (ContainerAntenna) {
+                if (ScannerButtonView) {
+                    FilterButton.style.marginLeft = "-775px";
+                } else {
+                    FilterButton.style.marginLeft = "-725px";
+                }
             } else {
-                button.textContent = "FILTER";
-                button.classList.remove('bg-color-2');
-                button.classList.add('bg-color-4');
-                button.style.pointerEvents = "auto"; // Enable hover effect
+                if (ScannerButtonView) {
+                    FilterButton.style.marginLeft = "150px";
+                } else {
+                    FilterButton.style.marginLeft = "200px";
+                }
             }
-        }
+        }, 1000); 
 
-        // Setup Filter button and state
-        function setupFilterButton() {
-            let FilterButton = document.getElementById("Filter-button");
-            const FilterState = getFilterStateFromCookie();
+        FilterButton.addEventListener("click", () => {
+            const newState = !getFilterStateFromCookie().state;
+            setFilterStateInCookie({ state: newState });
+            updateFilterButton(FilterButton, newState);
+        });
 
-            if (!FilterButton) {
-                FilterButton = document.createElement("button");
-                FilterButton.id = "Filter-button";
-                FilterButton.style.width = "100px";
-                FilterButton.style.height = "20px";               
-                FilterButton.style.marginRight = "5px";
-                FilterButton.style.marginTop = "0px";
-                FilterButton.style.display = "flex";
-                FilterButton.style.alignItems = "center";
-                FilterButton.style.justifyContent = "center";
-                FilterButton.style.borderRadius = '0px';
-                FilterButton.style.fontWeight = "bold";
+        updateFilterButton(FilterButton, FilterState.state);
+    }
 
-				if (ScannerButtonView) {
-					FilterButton.style.marginLeft = "-310px";
-				} else {
-					FilterButton.style.marginLeft = "-250px";
-				}
+    return FilterButton;
+}
 
-                FilterButton.addEventListener("click", () => {
-                    const newState = !getFilterStateFromCookie().state;
-                    setFilterStateInCookie({ state: newState });
-                    updateFilterButton(FilterButton, newState);
-                });
+// Call setupFilterButton to initialize on page load
+setupFilterButton();
 
-                updateFilterButton(FilterButton, FilterState.state);
-            }
-
-            return FilterButton;
-        }
 		
 		
         document.addEventListener("DOMContentLoaded", () => {
@@ -1001,8 +1016,7 @@ function toggleLogger() {
                 ScannerButton.id = "Scanner-button";
                 ScannerButton.style.width = "100px";
                 ScannerButton.style.height = "20px";
-                ScannerButton.style.marginLeft = "0px";
-                ScannerButton.style.marginRight = "5px";
+                ScannerButton.style.marginLeft = "5px";
                 ScannerButton.style.marginTop = "0px";
                 ScannerButton.style.display = "flex";
                 ScannerButton.style.alignItems = "center";
@@ -1035,7 +1049,7 @@ function toggleLogger() {
                 blacklistButton.id = "blacklist-button";
                 blacklistButton.style.width = "100px";
                 blacklistButton.style.height = "20px";
-                blacklistButton.style.marginLeft = "0px";
+                blacklistButton.style.marginLeft = "5px";
                 blacklistButton.style.marginTop = "0px";
                 blacklistButton.style.display = "flex";
                 blacklistButton.style.alignItems = "center";
