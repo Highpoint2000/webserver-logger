@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6 BETA)  ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6 BETA)   ///
 ///                                                      ///
-///  by Highpoint                last update: 27.08.24   ///
+///  by Highpoint                last update: 30.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
