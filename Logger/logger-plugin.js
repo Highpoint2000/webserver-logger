@@ -13,7 +13,7 @@
 const FMLIST_OM_ID = ''; 	// To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; 				// If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
-const UTCtime = false; 			// Set to "true" for logging with UTC Time
+const UTCtime = true; 			// Set to "true" for logging with UTC Time
 
 const TestMode = false; 				// Standard is 'false' - only for testings!!!
 const plugin_version = 'V1.6 BETA'; 	// Plugin Version
