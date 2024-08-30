@@ -10,6 +10,7 @@ This plugin provides logging functions for the FM-DX web server.
 - Time in Logfiles can be set to UTC
 - The filter mode is active at start
 - FMLIST Link only appears in the log files if an OMID was stored in the script
+- Proxy server adjustments (thanks to _zer0_gravity_!)
 
 ## Installation notes:
 
