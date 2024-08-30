@@ -871,7 +871,8 @@ function toggleLogger() {
             const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
             const port = window.location.port;
             const host = document.location.hostname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
+            const path = document.location.pathname;
+            const blacklistUrl = `${blacklistProtocol}//${host}:${port}${path}logger/blacklist.txt`;
 
             fetch(blacklistUrl)
                 .then(response => {
@@ -1122,7 +1123,8 @@ setupFilterButton();
             const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
             const port = window.location.port;
             const host = document.location.hostname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
+            const path = document.location.pathname;
+            const blacklistUrl = `${blacklistProtocol}//${host}:${port}${path}logger/blacklist.txt`;
 
             if (state) {
                 // Blacklist is ON, fetch the blacklist file
@@ -1172,7 +1174,8 @@ setupFilterButton();
             const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
             const port = window.location.port;
             const host = document.location.hostname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
+            const path = document.location.pathname;
+            const blacklistUrl = `${blacklistProtocol}//${host}:${port}${path}logger/blacklist.txt`;
 
             fetch(blacklistUrl, { method: 'HEAD' })
                 .then(response => {
@@ -1258,7 +1261,7 @@ async function downloadDataCSV() {
 	
 	if (scannerState) {
 
-		const baseUrl = window.location.origin + '/logs/';
+		const baseUrl = window.location.origin + window.location.pathname + 'logs/';
 		const fileName = filterState ? `SCANNER_${currentDate}_filtered.csv` : `SCANNER_${currentDate}.csv`;
 		const fileUrl = baseUrl + fileName;
 
@@ -1338,7 +1341,7 @@ async function downloadDataHTML() {
     const scannerState = getScannerStateFromCookie().state;
 
     if (scannerState) {
-        const baseUrl = window.location.origin + '/logs/';
+        const baseUrl = window.location.origin + window.location.pathname + 'logs/';
         const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
         const fileUrl = baseUrl + fileName;
 
