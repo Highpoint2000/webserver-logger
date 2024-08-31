@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6 BETA)   ///
 ///                                                      ///
-///  by Highpoint                last update: 30.08.24   ///
+///  by Highpoint                last update: 31.08.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -871,8 +871,7 @@ function toggleLogger() {
             const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
             const port = window.location.port;
             const host = document.location.hostname;
-            const path = document.location.pathname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}${path}logger/blacklist.txt`;
+            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
 
             fetch(blacklistUrl)
                 .then(response => {
@@ -1123,8 +1122,7 @@ setupFilterButton();
             const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
             const port = window.location.port;
             const host = document.location.hostname;
-            const path = document.location.pathname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}${path}logger/blacklist.txt`;
+            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
 
             if (state) {
                 // Blacklist is ON, fetch the blacklist file
@@ -1174,8 +1172,7 @@ setupFilterButton();
             const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
             const port = window.location.port;
             const host = document.location.hostname;
-            const path = document.location.pathname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}${path}logger/blacklist.txt`;
+            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
 
             fetch(blacklistUrl, { method: 'HEAD' })
                 .then(response => {
@@ -1259,23 +1256,45 @@ async function downloadDataCSV() {
     const filterState = getFilterStateFromCookie().state;
 	const scannerState = getScannerStateFromCookie().state;
 	
-	if (scannerState) {
+if (scannerState) {
+    const baseUrl = window.location.origin + '/logs/';
+    
+    // Parse the current date and calculate the previous date
+    const currentDateFormatted = new Date(currentDate);
+    const previousDateFormatted = new Date(currentDateFormatted);
+    previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
+    
+    // Format dates as strings in the format YYYY-MM-DD
+    const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0];
+    const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0];
+    
+    // Create file names based on the presence of filterState
+    const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.csv` : `SCANNER_${formattedCurrentDate}.csv`;
+    const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.csv` : `SCANNER_${formattedPreviousDate}.csv`;
+    
+    // Construct URLs for both current and previous date files
+    const fileUrlCurrent = baseUrl + fileNameCurrent;
+    const fileUrlPrevious = baseUrl + fileNamePrevious;
+    
+    // Check if the file for the current date exists
+    const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
+    if (fileExistsCurrent) {
+        window.open(fileUrlCurrent, '_blank');
+        return;
+    } else {
+        // If the current date file doesn't exist, check for the previous date file
+        const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
+        if (fileExistsPrevious) {
+            window.open(fileUrlPrevious, '_blank');
+            return;
+        } else {
+            // If neither file exists, alert the user
+            alert('File does not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
+            return;
+        }
+    }
+}
 
-		const baseUrl = window.location.origin + window.location.pathname + 'logs/';
-		const fileName = filterState ? `SCANNER_${currentDate}_filtered.csv` : `SCANNER_${currentDate}.csv`;
-		const fileUrl = baseUrl + fileName;
-
-		// Check if the file exists
-		const fileExists = await checkFileExists(fileUrl);
-		if (fileExists) {
-			// If the file exists, open the link in a new tab
-			window.open(fileUrl, '_blank');
-			return; // Exit the function after opening the link
-		} else {
-			alert('File not exist: ' + fileUrl);
-			return; // Exit the function after alert message
-		}
-	}
 
     // File does not exist, proceed to generate the CSV content
     try {
@@ -1340,20 +1359,38 @@ async function downloadDataHTML() {
     const filterState = getFilterStateFromCookie().state;
     const scannerState = getScannerStateFromCookie().state;
 
-    if (scannerState) {
-        const baseUrl = window.location.origin + window.location.pathname + 'logs/';
-        const fileName = filterState ? `SCANNER_${currentDate}_filtered.html` : `SCANNER_${currentDate}.html`;
-        const fileUrl = baseUrl + fileName;
+if (scannerState) {
+    const baseUrl = window.location.origin + '/logs/';
+    const currentDateFormatted = new Date(currentDate);
+    const previousDateFormatted = new Date(currentDateFormatted);
+    previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
 
-        const fileExists = await checkFileExists(fileUrl);
-        if (fileExists) {
-            window.open(fileUrl, '_blank');
+    const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+    const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.html` : `SCANNER_${formattedCurrentDate}.html`;
+    const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.html` : `SCANNER_${formattedPreviousDate}.html`;
+    
+    const fileUrlCurrent = baseUrl + fileNameCurrent;
+    const fileUrlPrevious = baseUrl + fileNamePrevious;
+
+    const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
+
+    if (fileExistsCurrent) {
+        window.open(fileUrlCurrent, '_blank');
+        return;
+    } else {
+        const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
+        if (fileExistsPrevious) {
+            window.open(fileUrlPrevious, '_blank');
             return;
         } else {
-            alert('File not exist: ' + fileUrl);
+            alert('File not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
             return;
         }
     }
+}
+
 	
     let allData = htmlTemplate;
 
@@ -1378,7 +1415,7 @@ async function downloadDataHTML() {
         let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
 
         let link1 = id ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
-        let link2 = id && id > 0 ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
+        let link2 = id && id > 0 && FMLIST_OM_ID !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
         allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
     });
