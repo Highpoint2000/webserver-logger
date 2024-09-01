@@ -403,7 +403,7 @@ if (TestMode === 'true') {
         // Function to open the FMDX link in a popup window
         function openFMDXPage() {
             // URL for the website
-            const url = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${stationid}&findId=*`;
+            const url = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${stationid}&findId=*`;
 
             // Open the link in a popup window
             FMDXWindow = window.open(url, "_blank", "width=600,height=400"); // Adjust the window size as needed
@@ -1414,13 +1414,13 @@ if (scannerState) {
 
         let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
 
-        let link1 = id ? `<a href="https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
+        let link1 = id ? `<a href="https://maps.fmdx.org/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
         let link2 = id && id > 0 && FMLIST_OM_ID !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
 
         allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
     });
 
-    let finalLink = `https://maps.fmdx.pl/#qth=${LAT},${LON}&id=${stationidAll}&findId=*`;
+    let finalLink = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${stationidAll}&findId=*`;
     allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
 
     const blob = new Blob([allData], { type: "text/html" });
