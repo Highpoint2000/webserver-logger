@@ -1,8 +1,11 @@
 # RDS-Logger Plugin for [FM-DX-Webserver](https://github.com/NoobishSVK/fm-dx-webserver)
 This plugin provides logging functions for the FM-DX web server.
 
-![image](https://github.com/user-attachments/assets/4b4130f7-1df1-4911-b87a-3493df342d1d)
-![image](https://github.com/user-attachments/assets/740f34c5-cc93-47bf-a6bd-02b32801e5f1)
+![image](https://github.com/user-attachments/assets/cd390e5f-21b8-4e34-bfbb-bba9bd0aed22)
+
+![image](https://github.com/user-attachments/assets/672fef04-f4d8-48dc-88b1-7c4b1f2241ad)
+
+
 
 
 
