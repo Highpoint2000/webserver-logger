@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6 BETA)   ///
 ///                                                      ///
-///  by Highpoint                last update: 31.08.24   ///
+///  by Highpoint                last update: 05.09.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -533,6 +533,7 @@ if (TestMode === 'true') {
 
         // Function to display extracted data
         async function displayExtractedData() {
+			
             const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
 			const now = new Date();
 			const date = formatDate(now);
@@ -546,9 +547,7 @@ if (TestMode === 'true') {
             const data = previousDataByFrequency[currentFrequency];
 
             const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
-
-            if ((data && data.picode.length > 1 && TestMode !== 'true') || (TestMode === 'true' && currentFrequency === test_frequency)) {
-                
+               
                 let station = "";
                 let city = "";
                 let itu = "";
@@ -602,8 +601,8 @@ if (TestMode === 'true') {
 			picode_clean = (data.picode);
 
         }
-		
-		        if (currentFrequency !== previousFrequency) {
+
+		        if (currentFrequency !== previousFrequency && data.picode.length > 1 ) {
 					previousFrequency = currentFrequency;
 					NewLine = 'true';
 					id = '';
@@ -643,21 +642,15 @@ if (TestMode === 'true') {
 
 
                 if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
-
-						if (stationid !== "" && stationid >= 0) {
-							if (!stationidAll.split(',').includes(stationid.toString())) {
-								stationidAll += stationidAll ? `,${stationid}` : stationid;
-							}
-						}
-                
+               
                         const newOutputDiv = document.createElement("div");
                         newOutputDiv.style.whiteSpace = "pre-wrap";
                         newOutputDiv.style.fontSize = "16px";
                         newOutputDiv.style.marginBottom = "-1px";
                         newOutputDiv.style.padding = "0 10px";
 						let lastOutputArray;
-														
-						if (NewLine === 'true' || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== '')) {		
+																
+						if (NewLine === 'true' && data.picode.length > 1 || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== '')) {		
 
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
@@ -665,19 +658,21 @@ if (TestMode === 'true') {
 								
 								
 								if (!picode.includes('??') && !picode.includes('???')) {
-									if (FilterState) {
+									if (FilterState && data.picode.length > 1) {
 										const lastOutputDiv = dataCanvas.lastChild;							
 										lastOutputDiv.textContent = outputTextFilter;
 									}
 									lastOutputArray = outputArrayFilter;
 								}							
 								
-								FilteredlogDataArray[FilteredlogDataArray.length +1] = lastOutputArray
+								if (FilterState && data.picode.length > 1) {
+									FilteredlogDataArray[FilteredlogDataArray.length +1] = lastOutputArray
+								}
 								NewLine = 'false'; 
 												
 						}
 
-						if ((ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???')) {
+						if ((ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???') && data.picode.length > 1 ) {
 						
 							if (FilterState) {							
 								const lastOutputDiv = dataCanvas.lastChild;
@@ -689,19 +684,22 @@ if (TestMode === 'true') {
 
 						}
 						
-						if (NewLine === 'true' || Savepicode !== picode_clean || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
+						if (NewLine === 'true' && data.picode.length > 1 || Savepicode !== picode_clean || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
 							
 							if (!FilterState) {
 						
 								if (dataCanvas instanceof Node) {
 									dataCanvas.appendChild(newOutputDiv);
 								}
-							
-								const lastOutputDiv = dataCanvas.lastChild;
-								lastOutputDiv.textContent = outputText;	
+								if (data.picode.length > 1) {
+									const lastOutputDiv = dataCanvas.lastChild;
+									lastOutputDiv.textContent = outputText;	
+								}
 							}
 							
-							logDataArray[logDataArray.length +1] = outputArray;	
+							if (data.picode.length > 1) {
+								logDataArray[logDataArray.length +1] = outputArray;	
+							}
 							NewLine = 'false'; 
 				
 						}
@@ -712,9 +710,8 @@ if (TestMode === 'true') {
 						Savestationid = stationid;
 						Saveps = ps;
 						dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;					
-						
+					
 				}
-            }
         }
 
    // Toggle logger state and update UI accordingly
@@ -1420,8 +1417,7 @@ if (scannerState) {
         allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
     });
 
-    let finalLink = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${stationidAll}&findId=*`;
-    allData += `</table></pre><pre><a href="${finalLink}" target="_blank">FMDX ALL</a></body></html>`;
+    allData += `</table></pre><pre></body></html>`;
 
     const blob = new Blob([allData], { type: "text/html" });
 
@@ -1461,8 +1457,14 @@ const htmlTemplate = `
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCANNER LOG [FILTER MODE]</title>
+    <title>RDS-LOGGER</title>
     <style>
+        /* Unified font style for the entire document */
+        body, label {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+        }
+
         /* Container for the search and refresh controls */
         #controls {
             display: flex;
@@ -1476,14 +1478,35 @@ const htmlTemplate = `
         /* Flexible area for the search input */
         #searchContainer {
             flex: 1;
+            display: flex;
+            align-items: center;
         }
 
         /* Styling for the search input */
         #searchInput {
             padding: 5px;
             width: 100%;
-            max-width: 400px;
+            max-width: 300px;
+            min-width: 100px; /* Ensures a minimum width */
             box-sizing: border-box;
+            margin-right: 10px;
+        }
+
+        /* Styling for the custom distance input */
+        #freeDistanceInput {
+            height: 14px; 
+            width: 50px; 
+        }
+        
+        .distance-label {
+            position: relative;
+            top: 3px; /* Moves the 'km' label 5 pixels down */
+        }
+
+        /* Container for the distance filter checkboxes */
+        #filterContainer {
+            display: flex;
+            gap: 10px;
         }
 
         /* Container for the buttons */
@@ -1548,7 +1571,7 @@ const htmlTemplate = `
         th {
             background-color: #f2f2f2;
         }
-        
+
         /* Dark mode styling for links */
         body.dark-mode a {
             color: #d6a8f5; /* Light purple color */
@@ -1557,7 +1580,7 @@ const htmlTemplate = `
         body.dark-mode a:hover {
             color: #b57edc; /* Slightly darker purple for hover effect */
         }
-        
+
         /* Dark mode styling for the search input */
         body.dark-mode #searchInput {
             background-color: #6c757d; /* Match the color of the dark mode toggle button */
@@ -1567,177 +1590,309 @@ const htmlTemplate = `
         /* Dark mode styling for the search input placeholder */
         body.dark-mode #searchInput::placeholder {
             color: white; /* Light gray placeholder text for better readability */
-        }   
+        }  
     </style>
     <script>
-        /* Get the value of a cookie by name */
-        function getCookie(name) {
-            const cookieName = name + "=";
-            const cookies = decodeURIComponent(document.cookie).split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                let cookie = cookies[i];
-                while (cookie.charAt(0) === ' ') {
-                    cookie = cookie.substring(1);
-                }
-                if (cookie.indexOf(cookieName) === 0) {
-                    return cookie.substring(cookieName.length, cookie.length);
-                }
+    let baseUrl = ""; // Variable to store the dynamic base URL
+
+    /* Get the value of a cookie by name */
+    function getCookie(name) {
+        const cookieName = name + "=";
+        const cookies = decodeURIComponent(document.cookie).split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            let cookie = cookies[i];
+            while (cookie.charAt(0) === ' ') {
+                cookie = cookie.substring(1);
             }
-            return "";
-        }
-
-        /* Set a cookie with a specific name, value, and expiration (in days) */
-        function setCookie(name, value, days) {
-            const expires = "expires=" + new Date(Date.now() + days * 864e5).toUTCString();
-            document.cookie = name + "=" + value + ";" + expires + ";path=/";
-        }
-
-        /* Sorts the table based on column index (n) */
-        function sortTable(n, isNumeric = false) {
-            const table = document.querySelector("table");
-            let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-            switching = true;
-            dir = "asc";
-
-            /* Keep switching rows until sorting is complete */
-            while (switching) {
-                switching = false;
-                rows = table.rows;
-
-                /* Loop through the rows, skipping the header */
-                for (i = 1; i < (rows.length - 1); i++) {
-                    shouldSwitch = false;
-                    x = rows[i].getElementsByTagName("TD")[n];
-                    y = rows[i + 1].getElementsByTagName("TD")[n];
-
-                    /* Compare based on numeric or string content */
-                    let xContent = isNumeric ? parseFloat(x.innerHTML) || 0 : x.innerHTML.toLowerCase();
-                    let yContent = isNumeric ? parseFloat(y.innerHTML) || 0 : y.innerHTML.toLowerCase();
-
-                    /* Determine if a switch is needed based on direction */
-                    if (dir == "asc") {
-                        if (xContent > yContent) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    } else if (dir == "desc") {
-                        if (xContent < yContent) {
-                            shouldSwitch = true;
-                            break;
-                        }
-                    }
-                }
-                if (shouldSwitch) {
-                    /* Make the switch and mark switching as true */
-                    rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                    switching = true;
-                    switchcount++;
-                } else {
-                    /* If no switching happened, change the direction */
-                    if (switchcount == 0 && dir == "asc") {
-                        dir = "desc";
-                        switching = true;
-                    }
-                }
+            if (cookie.indexOf(cookieName) === 0) {
+                return cookie.substring(cookieName.length, cookie.length);
             }
         }
+        return "";
+    }
 
-        /* Filters table rows based on input value */
-        function filterTable() {
-            const input = document.getElementById("searchInput");
-            const filter = input.value.toLowerCase();
-            const table = document.querySelector("table");
-            const tr = table.getElementsByTagName("tr");
+    /* Set a cookie with a specific name, value, and expiration (in days) */
+    function setCookie(name, value, days) {
+        const expires = "expires=" + new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
 
-            /* Loop through all table rows */
-            for (let i = 1; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName("td");
-                let display = false;
-                for (let j = 0; j < td.length; j++) {
-                    /* Check if any cell contains the filter text */
-                    if (td[j].textContent.toLowerCase().indexOf(filter) > -1) {
-                        display = true;
+    /* Extracts the base URL from the first entry */
+	function extractBaseUrl() {
+		// Get all anchor elements within the table
+		const links = document.querySelectorAll("table tr td a");
+    
+		// Loop through each link
+		for (let i = 0; i < links.length; i++) {
+			const href = links[i].href;
+
+			// Check if the href contains "https://maps.fmdx.org"
+			if (href.includes("https://maps.fmdx.org")) {
+				// Extract the base part up to '&id='
+				const splitLink = href.split('&id=')[0];
+				// Add the '&id=' back to form the correct base URL
+				baseUrl = splitLink + "&id=";
+				break; // Exit the loop once we find the first matching link
+			}
+		}
+	}
+
+    /* Sorts the table based on column index (n) */
+    function sortTable(n, isNumeric = false) {
+        const table = document.querySelector("table");
+        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        switching = true;
+        dir = "asc";
+
+        /* Keep switching rows until sorting is complete */
+        while (switching) {
+            switching = false;
+            rows = table.rows;
+
+            /* Loop through the rows, skipping the header */
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[n];
+                y = rows[i + 1].getElementsByTagName("TD")[n];
+
+                /* Compare based on numeric or string content */
+                let xContent = isNumeric ? parseFloat(x.innerHTML) || 0 : x.innerHTML.toLowerCase();
+                let yContent = isNumeric ? parseFloat(y.innerHTML) || 0 : y.innerHTML.toLowerCase();
+
+                /* Determine if a switch is needed based on direction */
+                if (dir == "asc") {
+                    if (xContent > yContent) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else if (dir == "desc") {
+                    if (xContent < yContent) {
+                        shouldSwitch = true;
                         break;
                     }
                 }
-                /* Show or hide the row based on the filter */
-                tr[i].style.display = display ? "" : "none";
+            }
+            if (shouldSwitch) {
+                /* Make the switch and mark switching as true */
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;
+            } else {
+                /* If no switching happened, change the direction */
+                if (switchcount == 0 && dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+
+    /* Filter table based on user input and distance */
+    function filterTable() {
+        const input = document.getElementById("searchInput");
+        const filter = input.value.toLowerCase();
+        const table = document.querySelector("table");
+        const tr = table.getElementsByTagName("tr");
+
+        // Checkbox filter
+        const filter150 = document.getElementById("filter150").checked;
+        const filter300 = document.getElementById("filter300").checked;
+        const filter700 = document.getElementById("filter700").checked;
+        const filter1300 = document.getElementById("filter1300").checked;
+        const filterFreeDistance = document.getElementById("filterFreeDistance").checked;
+        const freeDistanceInput = parseFloat(document.getElementById("freeDistanceInput").value);
+
+        let distanceFilter = null; // Start with no distance filter
+
+        if (filter150) {
+            distanceFilter = 150;
+        } else if (filter300) {
+            distanceFilter = 300;
+        } else if (filter700) {
+            distanceFilter = 700;
+        } else if (filter1300) {
+            distanceFilter = 1300;
+        } else if (filterFreeDistance && !isNaN(freeDistanceInput)) {
+            distanceFilter = freeDistanceInput; // Use custom distance if checkbox is checked and value is valid
+        }
+
+        // Loop through all table rows
+        for (let i = 1; i < tr.length; i++) {
+            let td = tr[i].getElementsByTagName("td");
+            let display = true; // Start assuming the row should be displayed
+
+            // Filter based on search input
+            if (filter) {
+                let rowMatches = false; // Assume no match initially
+                for (let j = 0; j < td.length; j++) {
+                    if (td[j].textContent.toLowerCase().indexOf(filter) > -1) {
+                        rowMatches = true; // Set match to true if any cell matches
+                        break;
+                    }
+                }
+                if (!rowMatches) {
+                    display = false; // If no cells matched the filter, hide the row
+                }
+            }
+
+            // Filter based on distance
+            if (display && distanceFilter !== null) {
+                let distValue = parseFloat(td[10].textContent) || 0; // Assume 'DIST' is in the 11th column (index 10)
+                if (distValue <= distanceFilter) {
+                    display = false; // Hide row if distance is less than or equal to the filter value
+                }
+            }
+
+            // Show or hide the row based on the filters
+            tr[i].style.display = display ? "" : "none";
+        }
+
+        generateDynamicLink(); // Update the link after filtering
+    }
+
+    /* Toggle Dark Mode */
+    function toggleDarkMode() {
+        const body = document.body;
+        const isDarkMode = body.classList.toggle("dark-mode");
+        setCookie("darkMode", isDarkMode, 365); // Save preference for 1 year
+    }
+
+    /* Apply Dark Mode based on cookie */
+    function applyDarkMode() {
+        const darkMode = getCookie("darkMode");
+        if (darkMode === "true") {
+            document.body.classList.add("dark-mode");
+        }
+    }
+
+    /* Generates a dynamic link based on visible table rows */
+    function generateDynamicLink() {
+        const table = document.querySelector("table");
+        const rows = table.getElementsByTagName("tr");
+        const uniqueIds = new Set();
+
+        // Loop through table rows to collect IDs
+        for (let i = 1; i < rows.length; i++) {
+            if (rows[i].style.display !== "none") { // Only consider visible rows
+                const cells = rows[i].getElementsByTagName("td");
+                const idCell = cells[cells.length - 3]; // The ID cell (3rd last cell)
+                if (idCell) {
+                    const idValue = idCell.textContent.trim();
+                    if (idValue) {
+                        uniqueIds.add(idValue);
+                    }
+                }
             }
         }
 
-        /* Toggle Dark Mode */
-        function toggleDarkMode() {
-            const body = document.body;
-            const isDarkMode = body.classList.toggle("dark-mode");
-            setCookie("darkMode", isDarkMode, 365); // Save preference for 1 year
-        }
+        // Check if IDs were found
+        if (uniqueIds.size > 0) {
+            const idsString = Array.from(uniqueIds).join(",");
+            const dynamicLink = baseUrl + idsString + "&findId=*"; // Use dynamic base URL
 
-        /* Apply Dark Mode based on cookie */
-        function applyDarkMode() {
-            const darkMode = getCookie("darkMode");
-            if (darkMode === "true") {
-                document.body.classList.add("dark-mode");
+            // Create or update link element
+            let dynamicLinkElement = document.getElementById("dynamicLink");
+            if (!dynamicLinkElement) {
+                dynamicLinkElement = document.createElement("a");
+                dynamicLinkElement.id = "dynamicLink";
+                dynamicLinkElement.target = "_blank";
+                document.body.appendChild(document.createElement("pre")).appendChild(dynamicLinkElement);
             }
+            dynamicLinkElement.href = dynamicLink;
+            dynamicLinkElement.textContent = "MAP ALL";
         }
+    }
 
-        /* Initializes controls on DOMContentLoaded */
-        document.addEventListener('DOMContentLoaded', () => {
-            applyDarkMode(); // Apply Dark Mode preference
+    /* Initializes controls on DOMContentLoaded */
+    document.addEventListener('DOMContentLoaded', () => {
+        applyDarkMode(); // Apply Dark Mode preference
+        extractBaseUrl(); // Extract base URL from the first entry
 
-            const controlsContainer = document.createElement('div');
-            controlsContainer.id = 'controls';
+        const controlsContainer = document.createElement('div');
+        controlsContainer.id = 'controls';
 
-            /* Create and append the search input container */
-            const searchContainer = document.createElement('div');
-            searchContainer.id = 'searchContainer';
+        /* Create and append the search input container */
+        const searchContainer = document.createElement('div');
+        searchContainer.id = 'searchContainer';
 
-            const searchInput = document.createElement('input');
-            searchInput.type = 'text';
-            searchInput.id = 'searchInput';
-            searchInput.placeholder = 'Search table ...';
-            searchInput.onkeyup = filterTable;
-            searchContainer.appendChild(searchInput);
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.id = 'searchInput';
+        searchInput.placeholder = 'Search table ...';
+        searchInput.onkeyup = filterTable;
+        searchContainer.appendChild(searchInput);
 
-            controlsContainer.appendChild(searchContainer);
+        /* Create and append the distance filter container */
+        const filterContainer = document.createElement('div');
+        filterContainer.id = 'filterContainer';
 
-            /* Create and append the button container */
-            const buttonContainer = document.createElement('div');
-            buttonContainer.id = 'buttonContainer';
+filterContainer.innerHTML = '<label><input type="checkbox" id="filter150" onchange="filterTable()"> ≥ 150 km</label>' +
+    '<label><input type="checkbox" id="filter300" onchange="filterTable()"> ≥ 300 km</label>' +
+    '<label><input type="checkbox" id="filter700" onchange="filterTable()"> ≥ 700 km</label>' +
+    '<label><input type="checkbox" id="filter1300" onchange="filterTable()"> ≥ 1300 km</label>' +
+    '<label>' +
+        '<input type="checkbox" id="filterFreeDistance" onchange="filterTable()"> Custom:' +
+    '</label>' +
+    '<input type="number" id="freeDistanceInput" placeholder="" min="0" oninput="filterTable()">' +
+    '<span class="distance-label">km</span>';
 
-            /* Create and append the dark mode button */
-            const darkModeButton = document.createElement('button');
-            darkModeButton.id = 'darkModeButton';
-            darkModeButton.className = 'button';
-            darkModeButton.innerText = 'Toggle Dark Mode';
-            darkModeButton.addEventListener('click', toggleDarkMode);
-            buttonContainer.appendChild(darkModeButton);
 
-            /* Append the button container to the controls container */
-            controlsContainer.appendChild(buttonContainer);
+        searchContainer.appendChild(filterContainer);
+        controlsContainer.appendChild(searchContainer);
 
-            /* Insert controls above the table */
-            document.body.insertBefore(controlsContainer, document.querySelector("pre"));
+        /* Create and append the button container */
+        const buttonContainer = document.createElement('div');
+        buttonContainer.id = 'buttonContainer';
 
-            /* Add click event listeners to table headers for sorting */
-            const headers = document.querySelectorAll("th");
-            headers[1].addEventListener("click", () => sortTable(1)); // TIME(UTC)
-            headers[2].addEventListener("click", () => sortTable(2, true)); // FREQ
-            headers[3].addEventListener("click", () => sortTable(3)); // PI
-            headers[4].addEventListener("click", () => sortTable(4)); // PS
-            headers[5].addEventListener("click", () => sortTable(5)); // NAME
-            headers[6].addEventListener("click", () => sortTable(6)); // CITY
-            headers[7].addEventListener("click", () => sortTable(7)); // ITU
-            headers[8].addEventListener("click", () => sortTable(8)); // P
-            headers[9].addEventListener("click", () => sortTable(9, true)); // ERP
-            headers[10].addEventListener("click", () => sortTable(10, true)); // DIST
-            headers[11].addEventListener("click", () => sortTable(11, true)); // AZ
-            headers[12].addEventListener("click", () => sortTable(12)); // ID
+        /* Create and append the dark mode button */
+        const darkModeButton = document.createElement('button');
+        darkModeButton.id = 'darkModeButton';
+        darkModeButton.className = 'button';
+        darkModeButton.innerText = 'Toggle Dark Mode';
+        darkModeButton.addEventListener('click', toggleDarkMode);
+        buttonContainer.appendChild(darkModeButton);
+
+        /* Append the button container to the controls container */
+        controlsContainer.appendChild(buttonContainer);
+
+        /* Insert controls above the table */
+        document.body.insertBefore(controlsContainer, document.querySelector("pre"));
+
+        /* Add click event listeners to table headers for sorting */
+        const headers = document.querySelectorAll("th");
+        headers[1].addEventListener("click", () => sortTable(1)); // TIME(UTC)
+        headers[2].addEventListener("click", () => sortTable(2, true)); // FREQ
+        headers[3].addEventListener("click", () => sortTable(3)); // PI
+        headers[4].addEventListener("click", () => sortTable(4)); // PS
+        headers[5].addEventListener("click", () => sortTable(5)); // NAME
+        headers[6].addEventListener("click", () => sortTable(6)); // CITY
+        headers[7].addEventListener("click", () => sortTable(7)); // ITU
+        headers[8].addEventListener("click", () => sortTable(8)); // P
+        headers[9].addEventListener("click", () => sortTable(9, true)); // ERP
+        headers[10].addEventListener("click", () => sortTable(10, true)); // DIST
+        headers[11].addEventListener("click", () => sortTable(11, true)); // AZ
+        headers[12].addEventListener("click", () => sortTable(12)); // ID
+
+        // Event listeners to ensure only one checkbox is selected
+        document.querySelectorAll('#filterContainer input[type="checkbox"]').forEach((checkbox) => {
+            checkbox.addEventListener('change', function () {
+                if (this.checked) {
+                    document.querySelectorAll('#filterContainer input[type="checkbox"]').forEach((cb) => {
+                        if (cb !== this) cb.checked = false;
+                    });
+                }
+                filterTable(); // Update the table after changing a checkbox
+            });
         });
+
+        generateDynamicLink();
+    });
     </script>
 </head>
 <body>
 <pre></pre>
 </body>
 </html>
+
 `;
 
