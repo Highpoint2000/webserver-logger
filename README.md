@@ -9,7 +9,7 @@ This plugin provides logging functions for the FM-DX web server.
 
 
 
-## Version 1.6 BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
+## Version 1.6 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
 - New layout for HTML logfile with search/sort Options, Toggle Button for dark mode
 - Time in Logfiles can be set to UTC
