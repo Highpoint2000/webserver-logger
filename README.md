@@ -13,6 +13,7 @@ This plugin provides logging functions for the FM-DX web server.
 - Proxy server adjustments (thanks to _zer0_gravity_!)
 - Download adjustments are the scanner log files
 - Renamed maps.fmdx.pl to maps.fmdx.org
+- The FMDX ALL link is now created dynamically and adapts to the log filter, and there are now distance restrictions in the log file
 
 ## Installation notes:
 
