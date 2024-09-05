@@ -10,7 +10,7 @@
 
 ///  This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = ''; 	// To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
+const FMLIST_OM_ID = '8082'; 	// To use the logbook function, please enter your OM ID here, for example: FMLIST_OM_ID = '1234'
 const Screen = ''; 				// If you see unsightly horizontal scroll bars, set this value to 'small' or 'ultrasmall'
 const ScannerButtonView = true; // Set to 'true' to get a button that activates the download links to the scanner files
 const UTCtime = true; 			// Set to "true" for logging with UTC Time
@@ -601,29 +601,31 @@ if (TestMode === 'true') {
 			picode_clean = (data.picode);
 
         }
-
-		        if (currentFrequency !== previousFrequency && data.picode.length > 1 ) {
-					previousFrequency = currentFrequency;
-					NewLine = 'true';
-					id = '';
-					dateFilter = formatDate(now);
-					if (UTCtime) {
-						timeFilter = getCurrentUTC(); // time in UTC
-					} else {
-						timeFilter = formatTime(now);
-					}
-					Savepicode = picode_clean;
-				}
-			
-				if (picode_clean.replace(/\?/g, '') !== picode_clean.replace(/\?/g, '')) {								
+				if (currentFrequency !== previousFrequency || previousFrequency === '' ) { 							
 					dateFilter = formatDate(now);				
 					if (UTCtime) {
 						timeFilter = getCurrentUTC(); // time in UTC
 					} else {
 						timeFilter = formatTime(now);
 					}
+					if (data.picode.length > 1 ) {
+						previousFrequency = currentFrequency;
+						NewLine = 'true';
+						id = '';
+						dateFilter = formatDate(now);
+						Savepicode = picode_clean;
+					}
 				}
 				
+				
+				if (!FilterState) {	
+					if (UTCtime) {
+						timeFilter = getCurrentUTC(); // time in UTC
+					} else {
+						timeFilter = formatTime(now);
+					}
+				}
+			
                 const outputText = station 
                     ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
                     : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
