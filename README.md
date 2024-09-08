@@ -6,19 +6,11 @@ This plugin provides logging functions for the FM-DX web server.
 ![image](https://github.com/user-attachments/assets/672fef04-f4d8-48dc-88b1-7c4b1f2241ad)
 
 
+## Version 1.6a BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
-
-
-## Version 1.6 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
-
-- New layout for HTML logfile with search/sort Options, Toggle Button for dark mode
-- Time in Logfiles can be set to UTC
-- The filter mode is active at start
-- FMLIST Link only appears in the log files if an OMID was stored in the script
-- Proxy server adjustments (thanks to _zer0_gravity_!)
-- Download adjustments are the scanner log files
-- Renamed maps.fmdx.pl to maps.fmdx.org and FMDX links to MAP links
-- The MAP ALL link is now created dynamically and adapts to the log filter, and there are now distance restrictions in the log file
+- Plugin configuration can be loaded from configPlugin.json file (only Windows systems!)
+- FMDX button became MAPALL and now calls up the map with all logs
+- test was removed from the code
 
 ## Installation notes:
 
@@ -39,6 +31,17 @@ Users who also use the Extended Description plugin should download the modified 
 
 
 ## History: 
+
+### Version 1.6 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
+
+- New layout for HTML logfile with search/sort Options, Toggle Button for dark mode
+- Time in Logfiles can be set to UTC
+- The filter mode is active at start
+- FMLIST Link only appears in the log files if an OMID was stored in the script
+- Proxy server adjustments (thanks to _zer0_gravity_!)
+- Download adjustments are the scanner log files
+- Renamed maps.fmdx.pl to maps.fmdx.org and FMDX links to MAP links
+- The MAP ALL link is now created dynamically and adapts to the log filter, and there are now distance restrictions in the log file
 
 ### Version 1.5 (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
