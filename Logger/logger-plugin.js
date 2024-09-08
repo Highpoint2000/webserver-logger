@@ -25,17 +25,22 @@ function loadConfig() {
     fetch('/js/plugins/Logger/configPlugin.json') // Updated path to /js/plugins/Logger
         .then(response => {
             if (!response.ok) {
-                throw new Error('Network response was not ok');
+                console.warn('Config file not found, using default values.');
+                return null; // Return null to trigger the default values
             }
             return response.json();
         })
         .then(config => {
-            // Override default values with values from config.json
-            FMLIST_OM_ID = config.FMLIST_OM_ID || FMLIST_OM_ID;
-            Screen = config.Screen || Screen;
-            ScannerButtonView = (typeof config.ScannerButtonView === 'boolean') ? config.ScannerButtonView : ScannerButtonView;
-            UTCtime = (typeof config.UTCtime === 'boolean') ? config.UTCtime : UTCtime;
-            console.log("RDS-Logger loaded config successfully from configPlugin.json.");
+            if (config) {
+                // Override default values with values from config.json
+                FMLIST_OM_ID = config.FMLIST_OM_ID || FMLIST_OM_ID;
+                Screen = config.Screen || Screen;
+                ScannerButtonView = (typeof config.ScannerButtonView === 'boolean') ? config.ScannerButtonView : ScannerButtonView;
+                UTCtime = (typeof config.UTCtime === 'boolean') ? config.UTCtime : UTCtime;
+                console.log("RDS-Logger loaded config successfully from configPlugin.json.");
+            } else {
+                console.log("Using default configuration values.");
+            }
 
             // CSS styles for button wrapper
             const buttonWrapperStyles = `
@@ -321,116 +326,111 @@ function loadConfig() {
                         }
                     }
 
-                    // Variable to track the window state
-                    let FMDXWindow = null;
-                    let isOpenFMDX = false;
+					// Variable to track the window state
+					let FMDXWindow = null;
+					let isOpenFMDX = false;
 
-                    // Function to create the FMDX button and link it to the overlay
-                    function createMAPALLButton() {
-                        // Create the button
-                        const MAPALLButton = document.createElement("button");
-                        MAPALLButton.textContent = "MAPALL";
-                        MAPALLButton.style.width = "80px";
-                        MAPALLButton.style.height = "20px";
-                        MAPALLButton.style.marginLeft = "140px";
-                        MAPALLButton.style.display = "flex";
-                        MAPALLButton.style.alignItems = "center";
-                        MAPALLButton.style.justifyContent = "center";
-                        MAPALLButton.style.borderRadius = '0px';
+					// Function to create the MAPALL button and link it to the overlay
+    				function createMAPALLButton() {
+       				 // Create the button
+       				 const MAPALLButton = document.createElement("button");
+       				 MAPALLButton.textContent = "MAPALL";
+      				 MAPALLButton.style.width = "80px";
+        				MAPALLButton.style.height = "20px";
+        				MAPALLButton.style.marginLeft = "140px";
+        				MAPALLButton.style.display = "flex";
+        				MAPALLButton.style.alignItems = "center";
+        				MAPALLButton.style.justifyContent = "center";
+        				MAPALLButton.style.borderRadius = '0px';
 
-                        // Function to update the button's class based on station
-                        function updateMAPALLButtonClass() {
-                            const data = previousDataByFrequency[currentFrequency];
-                            const station = data ? data.station : '';
-                            stationid = data ? data.stationid : '';
+        				// Function to update the button's class based on uniqueStationIds
+        				function updateMAPALLButtonClass() {
+            				const stationidArray = collectStationIds();
+            				const uniqueStationIds = [...new Set(stationidArray)].join(',');
 
-                            if (station !== '' && !isInBlacklist(currentFrequency, blacklist)) {
-                                MAPALLButton.classList.remove('bg-color-2');
-                                MAPALLButton.classList.add('bg-color-4');
-                                MAPALLButton.classList.remove('inactive');
-                                MAPALLButton.classList.add('active');
-                                MAPALLButton.disabled = false;
-                            } else {
-                                MAPALLButton.classList.remove('bg-color-4');
-                                MAPALLButton.classList.add('bg-color-2');
-                                MAPALLButton.classList.remove('active');
-                                MAPALLButton.classList.add('inactive');
-                                MAPALLButton.disabled = true;
-                            }
-                        }
+            				if (uniqueStationIds.length > 0) {
+              				 MAPALLButton.classList.remove('bg-color-2');
+               				 MAPALLButton.classList.add('bg-color-4');
+               				 MAPALLButton.classList.remove('inactive');
+               				 MAPALLButton.classList.add('active');
+               				 MAPALLButton.disabled = false;
+            				} else {
+                				MAPALLButton.classList.remove('bg-color-4');
+                				MAPALLButton.classList.add('bg-color-2');
+                				MAPALLButton.classList.remove('active');
+                				MAPALLButton.classList.add('inactive');
+                				MAPALLButton.disabled = true;
+            				}
+        				}
 
-                        // Event listener for button click
-                        MAPALLButton.addEventListener("click", function () {
-                            const data = previousDataByFrequency[currentFrequency];
-                            const station = data ? data.station : '';
-                            if (stationid) {
-                                // Check if the popup window is already open
-                                if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
-                                    // Close if already open
-                                    FMDXWindow.close();
-                                    isOpenFMDX = false;
-                                } else {
-                                    // Open if not already open
-                                    openFMDXPage();
-                                    isOpenFMDX = true;
-                                }
-                            }
-                        });
+        				// Event listener for button click
+        				MAPALLButton.addEventListener("click", function () {
+            				if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
+                				FMDXWindow.close();
+                				isOpenFMDX = false;
+            				} else {
+                				openFMDXPage();
+                				isOpenFMDX = true;
+            				}
+        				});
 
-                        // Set an interval to continually check and update the button's class
-                        setInterval(updateMAPALLButtonClass, 100); // Check every 100 milliseconds
+        				// Set an interval to continually check and update the button's class
+        				setInterval(updateMAPALLButtonClass, 100); // Check every 100 milliseconds
 
-                        return MAPALLButton;
-                    }
+       				 return MAPALLButton;
+    				}
 
-                    // Function to open the FMDX link in a popup window
-                    function openFMDXPage() {
+					// Function to open the FMDX link in a popup window
+    				function openFMDXPage() {
+        				const stationidArray = collectStationIds();
+        				const uniqueStationIds = [...new Set(stationidArray)].join(',');
 
-                        // Function to extract the stationid from an array entry
-                        function extractStationId(entry) {
-                            if (typeof entry === 'undefined') {
-                                return null;
-                            }
+       				 if (uniqueStationIds.length > 0) {
+            				const url = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${uniqueStationIds}&findId=*`;
+            				FMDXWindow = window.open(url, "_blank", "width=600,height=400");
+        				}
+    				}
 
-                            const entryParts = entry.split(' | ');
-                            if (entryParts.length >= 13) {
-                                return entryParts[12]; // Extract the 13th element (index 12)
-                            } else {
-                                return null;
-                            }
-                        }
+    				// Function to extract the stationid from an array entry
+    				function extractStationId(entry) {
+        				if (typeof entry === 'undefined') {
+            				return null;
+        				}
 
-                        // Check if FilterState is true or false
-                        let stationidArray = [];
-						
-                        if (FilteredlogDataArray.length > 0) {
-                            for (let i = 0; i < FilteredlogDataArray.length; i++) {
-                                const stationid = extractStationId(FilteredlogDataArray[i]);
-                                if (stationid !== null) {
-                                    stationidArray.push(stationid);
-                                }
-                            }
-                        } 
-						
-						if (logDataArray.length > 0) {
-                            for (let i = 0; i < logDataArray.length; i++) {
-                                const stationid = extractStationId(logDataArray[i]);
-                                if (stationid !== null) {
-                                    stationidArray.push(stationid);
-                                }
-                            }
-                        } 					
+        				const entryParts = entry.split(' | ');
+        				if (entryParts.length >= 13) {
+            				return entryParts[12]; // Extract the 13th element (index 12)
+        				} else {
+            				return null;
+        				}
+    				}
 
-                        // Remove duplicate stationids and create a comma-separated list
-                        const uniqueStationIds = [...new Set(stationidArray)].join(',');
+    				// Function to collect all station IDs from FilteredlogDataArray and logDataArray
+    				function collectStationIds() {
+        				let stationidArray = [];
 
-                        // URL for the website with all stationids
-                        const url = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${uniqueStationIds}&findId=*`;
+        				if (FilteredlogDataArray.length > 0) {
+            				for (let i = 0; i < FilteredlogDataArray.length; i++) {
+                				const stationid = extractStationId(FilteredlogDataArray[i]);
+                				if (stationid !== null) {
+                    				stationidArray.push(stationid);
+                				}
+            				}
+        				}
 
-                        // Open the link in a popup window
-                        FMDXWindow = window.open(url, "_blank", "width=600,height=400"); // Adjust window size as needed
+        				if (logDataArray.length > 0) {
+            				for (let i = 0; i < logDataArray.length; i++) {
+                				const stationid = extractStationId(logDataArray[i]);
+                				if (stationid !== null) {
+                    				stationidArray.push(stationid);
+                				}
+            				}
+        				}
 
-                    }
+        				return stationidArray;
+    				}
+				
+
 
                     // Variable to track the window state
                     let FMLISTWindow = null;
