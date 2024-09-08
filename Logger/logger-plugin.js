@@ -1,1432 +1,1426 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6)        ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a BETA)  ///
 ///                                                      ///
-///  by Highpoint                last update: 05.09.24   ///
+///  by Highpoint                last update: 08.09.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
 ////////////////////////////////////////////////////////////
 
-///  This plugin only works from web server version 1.2.6!!!
+// This plugin only works from web server version 1.2.6!!!
 
-const FMLIST_OM_ID = ''; 		// To use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
-const Screen = ''; 				// Set to 'small' or 'ultrasmall' if there are unwanted horizontal scroll bars
-const ScannerButtonView = true; // Set to 'true' to display a button for activating download links to scanner files
-const UTCtime = true; 			// Set to 'true' to log using UTC time
-
-const TestMode = false; 		// Default is 'false' - only for testing purposes
-const plugin_version = 'V1.6'; 	// Plugin Version
+// Default values
+let FMLIST_OM_ID = '';           // To use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
+let Screen = '';                 // Set to 'small' or 'ultrasmall' if there are unwanted horizontal scroll bars
+let ScannerButtonView = false;   // Set to 'true' to display a button for activating download links to scanner files
+let UTCtime = true;              // Set to 'true' to log using UTC time
 
 /////////////////////////////////////////////////////////////////////////////////////
 
-// Test variables for use in TestMode
-let test_frequency = '';
-let test_picode = '';        
-let test_itu = '';           
-let test_city = '';    
-let test_ps = '';      
-let test_station = ''; 
-let test_pol = '';             
-let test_erp = '';             
-let test_distance = '';      
-let test_azimuth = ''; 
-let test_stationid = '';   
+const plugin_version = 'V1.6a BETA'; // Plugin Version
 
-// CSS styles for button wrapper
-const buttonWrapperStyles = `
-      display: flex;
-      justify-content: left;
-      align-items: center;
-      margin-top: 0px;
-`;     
+// Function to load configPlugin.json from /js/plugins/Logger directory (ONLY WINDOWS SYSTEMS)
+function loadConfig() {
+    fetch('/js/plugins/Logger/configPlugin.json') // Updated path to /js/plugins/Logger
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(config => {
+            // Override default values with values from config.json
+            FMLIST_OM_ID = config.FMLIST_OM_ID || FMLIST_OM_ID;
+            Screen = config.Screen || Screen;
+            ScannerButtonView = (typeof config.ScannerButtonView === 'boolean') ? config.ScannerButtonView : ScannerButtonView;
+            UTCtime = (typeof config.UTCtime === 'boolean') ? config.UTCtime : UTCtime;
+            console.log("RDS-Logger loaded config successfully from configPlugin.json.");
 
-// If TestMode is enabled, set test data
-if (TestMode === 'true') {
-    console.log('Test mode enabled');
-    test_frequency = '90.300';  // Test Frequency
-    test_picode = '7261';       // Test Picode
-    test_itu = 'RUS';           // Test ITU code
-    test_city = 'Moskva';       // Test city
-    test_ps = '*_ABTO_*';       // Test PS (Program Service name)
-    test_station = 'Avtoradio'; // Test station name
-    test_pol = 'C';             // Test polarization
-    test_erp = '160';           // Test ERP (Effective Radiated Power)
-    test_distance = '1416';     // Test distance
-    test_azimuth = '33';        // Test azimuth
-    test_stationid = 'xxxxxx';  // Test station ID
+            // CSS styles for button wrapper
+            const buttonWrapperStyles = `
+                  display: flex;
+                  justify-content: left;
+                  align-items: center;
+                  margin-top: 0px;
+            `;
+
+            // Immediately invoked function expression (IIFE) to encapsulate the loggerPlugin code
+            (() => {
+                const loggerPlugin = (() => {
+                    let displayedPiCodes = [];
+                    let logDataArray = [];
+                    let FilteredlogDataArray = [];
+                    const previousDataByFrequency = {};
+                    let currentFrequency = "";
+                    let previousFrequency = "";
+                    let autoScanSocket;
+                    const ServerName = document.title;
+                    const metaTag = document.querySelector('meta[property="og:description"]');
+                    const content = metaTag ? metaTag.getAttribute('content') : null;
+                    const ServerDescription = content ? content.replace('Server description: ', '') : null;
+                    let lastBlacklistFrequency = null;
+                    let NewLine = 'false';
+                    let stationidAll = '';
+                    let id = '';
+                    let loopCounter = 0;
+                    let scrollCounter = 0;
+                    let SaveFrequency = '';
+                    let Savepicode = '';
+                    let Savestation = '';
+                    let Savestationid = '';
+                    let Saveps = '';
+                    let dateFilter = '';
+                    let timeFilter = '';
+                    let picode_clean = '';
+
+                    console.log('ServerName:', ServerName);
+                    console.log('ServerDescription:', ServerDescription);
+
+                    // Setup WebSocket connection
+                    async function setupWebSocket() {
+                        if (!autoScanSocket || autoScanSocket.readyState === WebSocket.CLOSED) {
+                            try {
+                                autoScanSocket = await window.socketPromise;
+
+                                autoScanSocket.addEventListener("open", () => {
+                                    console.log("WebSocket connected.");
+                                });
+
+                                autoScanSocket.addEventListener("message", handleWebSocketMessage);
+
+                                autoScanSocket.addEventListener("error", (error) => {
+                                    console.error("WebSocket error:", error);
+                                });
+
+                                autoScanSocket.addEventListener("close", (event) => {
+                                    console.log("WebSocket closed:", event);
+                                    // Optionally, attempt to reconnect after a delay
+                                    setTimeout(setupWebSocket, 5000);
+                                });
+
+                            } catch (error) {
+                                console.error("Failed to setup WebSocket:", error);
+                            }
+                        }
+                    }
+
+                    const LAT = localStorage.getItem('qthLatitude');
+                    const LON = localStorage.getItem('qthLongitude');
+
+                    // Log the coordinates to the console
+                    console.log('Latitude:', LAT);
+                    console.log('Longitude:', LON);
+
+                    // Handle incoming WebSocket messages
+                    function handleWebSocketMessage(event) {
+                        const eventData = JSON.parse(event.data);
+                        const frequency = eventData.freq;
+
+                        // Process data if frequency is not in the blacklist
+                        const txInfo = eventData.txInfo;
+
+                        let ps = eventData.ps;
+                        if ((eventData.ps_errors !== "0,0,0,0,0,0,0,1") && (eventData.ps_errors !== "0,0,0,0,0,0,0,0")) {
+                            ps += "?";
+                        }
+
+                        previousDataByFrequency[frequency] = {
+                            picode: eventData.pi,
+                            ps: ps,
+                            station: txInfo ? txInfo.tx : "",
+                            pol: txInfo ? txInfo.pol : "",
+                            erp: txInfo ? txInfo.erp : "",
+                            city: txInfo ? txInfo.city : "",
+                            itu: txInfo ? txInfo.itu : "",
+                            distance: txInfo ? txInfo.dist : "",
+                            azimuth: txInfo ? txInfo.azi : "",
+                            stationid: txInfo ? txInfo.id : ""
+                        };
+
+                        currentFrequency = frequency;
+                        displayExtractedData();
+                    }
+
+                    // Create container for extracted data
+                    const extractedDataContainer = document.createElement("div");
+                    extractedDataContainer.id = "extracted-data-container";
+                    document.body.appendChild(extractedDataContainer);
+
+                    let isLoggerOn = false;
+
+                    // Ensure parent container exists
+                    let parentContainer = document.querySelector(".canvas-container");
+                    if (!parentContainer) {
+                        parentContainer = document.createElement("div");
+                        parentContainer.className = "canvas-container hide-phone";
+                        document.body.appendChild(parentContainer);
+                    }
+
+                    // Retrieve styles for further use
+                    const h2Style = window.getComputedStyle(document.querySelector('h2'));
+                    const borderColor = h2Style.color;
+
+                    // Create the logging canvas and append it to the parent container
+                    let loggingCanvas = document.createElement("div");
+                    loggingCanvas.id = "logging-canvas";
+                    loggingCanvas.style.height = "95%";
+                    loggingCanvas.style.width = "97%";
+                    loggingCanvas.style.marginTop = "0px";
+                    loggingCanvas.style.marginRight = "0px";
+                    loggingCanvas.style.marginLeft = "20px";
+                    loggingCanvas.style.display = 'none';
+                    loggingCanvas.style.border = "1px solid ";
+                    loggingCanvas.classList.add('color-4');
+                    loggingCanvas.style.backgroundColor = "var(--color-1-transparent)";
+                    loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
+                    parentContainer.appendChild(loggingCanvas);
+
+                    // Create a container for both titleDiv and dataCanvas
+                    const scrollContainer = document.createElement("div");
+                    scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
+                    scrollContainer.style.display = "block";
+                    scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
+                    scrollContainer.style.width = "100%";
+                    scrollContainer.style.height = "100%";
+                    scrollContainer.style.whiteSpace = "pre-wrap";
+                    loggingCanvas.appendChild(scrollContainer);
+
+                    const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
+
+                    // Create and configure title div
+                    const titleDiv = document.createElement("div");
+
+                    if (UTCtime) {
+                        if (Screen === 'ultrasmall') {
+                            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
+                        } else if (Screen === 'small') {
+                            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
+                        } else {
+                            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+                        }
+                    } else {
+                        if (Screen === 'ultrasmall') {
+                            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
+                        } else if (Screen === 'small') {
+                            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
+                        } else {
+                            titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+                        }
+                    }
+
+                    titleDiv.style.padding = "10px";
+                    titleDiv.style.display = "block"; // Allow block display to stack elements vertically
+                    titleDiv.style.fontFamily = "Monospace"; // Customize font
+                    titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+                    titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
+                    titleDiv.style.width = "max-content"; // Ensure content dictates width
+                    titleDiv.style.whiteSpace = "pre-wrap";
+                    scrollContainer.appendChild(titleDiv);
+
+                    // Create and configure data canvas
+                    let dataCanvas = document.createElement("div");
+                    dataCanvas.id = "output-canvas";
+                    dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
+                    dataCanvas.style.color = "white";
+                    dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
+                    dataCanvas.style.fontFamily = "Monospace";
+                    dataCanvas.style.position = "relative";
+                    dataCanvas.style.padding = "0";
+                    dataCanvas.style.whiteSpace = "nowrap";
+                    dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
+                    dataCanvas.style.width = "max-content"; // Ensure content dictates width
+                    dataCanvas.style.height = "65%";
+                    dataCanvas.style.maxHeight = "65%";
+                    scrollContainer.appendChild(dataCanvas);
+
+                    // Adjust dataCanvas height based on scrollContainer height
+                    function adjustDataCanvasHeight() {
+                        let scrollContainerHeight = scrollContainer.getBoundingClientRect().height;
+                        scrollContainerHeight = Math.floor(scrollContainerHeight); // Convert to integer
+
+                        console.log('scrollContainerHeight:', scrollContainerHeight);
+
+                        if (scrollContainerHeight > 112) {
+                            dataCanvas.style.height = "65%";
+                            dataCanvas.style.maxHeight = "65%";
+                            dataCanvas.style.marginTop = "0px";
+                        } else {
+                            dataCanvas.style.height = "48%";
+                            dataCanvas.style.maxHeight = "48%";
+                            dataCanvas.style.marginTop = "-10px";
+                        }
+                    }
+
+                    // Utility function to pad strings with spaces
+                    function padLeftWithSpaces(str, targetLength) {
+                        const spacesToAdd = targetLength - str.length;
+                        return spacesToAdd <= 0 ? str : " ".repeat(spacesToAdd) + str;
+                    }
+
+                    function padRightWithSpaces(text, desiredLength) {
+                        const spacesToAdd = Math.max(0, desiredLength - text.length);
+                        return text + " ".repeat(spacesToAdd);
+                    }
+
+                    // Utility function to truncate strings if they exceed a certain length
+                    function truncateString(str, maxLength) {
+                        return str.length > maxLength ? str.substring(0, maxLength) : str;
+                    }
+
+                    let ButtonsContainer = document.querySelector(".download-buttons-container");
+
+                    if (!ButtonsContainer) {
+                        ButtonsContainer = document.createElement("div");
+                        ButtonsContainer.className = "download-buttons-container";
+                        ButtonsContainer.style.display = "none";
+                        ButtonsContainer.style.position = "relative";
+                        ButtonsContainer.style.marginLeft = "0px";
+                        ButtonsContainer.style.marginTop = "0px";
+                        ButtonsContainer.style.textAlign = "left"; // Ensures left alignment
+
+                        const FilterButton = setupFilterButton();
+                        if (FilterButton instanceof Node) {
+                            ButtonsContainer.appendChild(FilterButton);
+                        }
+
+                        if (ScannerButtonView) {
+                            const ScannerButton = setupScannerButton();
+                            if (ScannerButton instanceof Node) {
+                                ButtonsContainer.appendChild(ScannerButton);
+                            }
+                        }
+
+                        const blacklistButton = setupBlacklistButton();
+                        if (blacklistButton instanceof Node) {
+                            ButtonsContainer.appendChild(blacklistButton);
+                        }
+
+                        const DownloadButtonCSV = createDownloadButtonCSV();
+                        if (DownloadButtonCSV instanceof Node) {
+                            ButtonsContainer.appendChild(DownloadButtonCSV);
+                        }
+
+                        const DownloadButtonHTML = createDownloadButtonHTML();
+                        if (DownloadButtonHTML instanceof Node) {
+                            ButtonsContainer.appendChild(DownloadButtonHTML);
+                        }
+
+                        const MAPALLButton = createMAPALLButton();
+                        if (MAPALLButton instanceof Node) {
+                            ButtonsContainer.appendChild(MAPALLButton);
+                        }
+
+                        const FMLISTButton = createFMLISTButton();
+                        if (FMLISTButton instanceof Node) {
+                            ButtonsContainer.appendChild(FMLISTButton);
+                        }
+
+                        if (parentContainer instanceof Node) {
+                            parentContainer.appendChild(ButtonsContainer);
+                        }
+                    }
+
+                    // Variable to track the window state
+                    let FMDXWindow = null;
+                    let isOpenFMDX = false;
+
+                    // Function to create the FMDX button and link it to the overlay
+                    function createMAPALLButton() {
+                        // Create the button
+                        const MAPALLButton = document.createElement("button");
+                        MAPALLButton.textContent = "MAPALL";
+                        MAPALLButton.style.width = "80px";
+                        MAPALLButton.style.height = "20px";
+                        MAPALLButton.style.marginLeft = "140px";
+                        MAPALLButton.style.display = "flex";
+                        MAPALLButton.style.alignItems = "center";
+                        MAPALLButton.style.justifyContent = "center";
+                        MAPALLButton.style.borderRadius = '0px';
+
+                        // Function to update the button's class based on station
+                        function updateMAPALLButtonClass() {
+                            const data = previousDataByFrequency[currentFrequency];
+                            const station = data ? data.station : '';
+                            stationid = data ? data.stationid : '';
+
+                            if (station !== '' && !isInBlacklist(currentFrequency, blacklist)) {
+                                MAPALLButton.classList.remove('bg-color-2');
+                                MAPALLButton.classList.add('bg-color-4');
+                                MAPALLButton.classList.remove('inactive');
+                                MAPALLButton.classList.add('active');
+                                MAPALLButton.disabled = false;
+                            } else {
+                                MAPALLButton.classList.remove('bg-color-4');
+                                MAPALLButton.classList.add('bg-color-2');
+                                MAPALLButton.classList.remove('active');
+                                MAPALLButton.classList.add('inactive');
+                                MAPALLButton.disabled = true;
+                            }
+                        }
+
+                        // Event listener for button click
+                        MAPALLButton.addEventListener("click", function () {
+                            const data = previousDataByFrequency[currentFrequency];
+                            const station = data ? data.station : '';
+                            if (stationid) {
+                                // Check if the popup window is already open
+                                if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
+                                    // Close if already open
+                                    FMDXWindow.close();
+                                    isOpenFMDX = false;
+                                } else {
+                                    // Open if not already open
+                                    openFMDXPage();
+                                    isOpenFMDX = true;
+                                }
+                            }
+                        });
+
+                        // Set an interval to continually check and update the button's class
+                        setInterval(updateMAPALLButtonClass, 100); // Check every 100 milliseconds
+
+                        return MAPALLButton;
+                    }
+
+                    // Function to open the FMDX link in a popup window
+                    function openFMDXPage() {
+
+                        // Function to extract the stationid from an array entry
+                        function extractStationId(entry) {
+                            if (typeof entry === 'undefined') {
+                                return null;
+                            }
+
+                            const entryParts = entry.split(' | ');
+                            if (entryParts.length >= 13) {
+                                return entryParts[12]; // Extract the 13th element (index 12)
+                            } else {
+                                return null;
+                            }
+                        }
+
+                        // Check if FilterState is true or false
+                        let stationidArray = [];
+
+                        if (FilteredlogDataArray.length > 0) {
+                            for (let i = 0; i < FilteredlogDataArray.length; i++) {
+                                const stationid = extractStationId(FilteredlogDataArray[i]);
+                                if (stationid !== null) {
+                                    stationidArray.push(stationid);
+                                }
+                            }
+                        }
+
+                        // Remove duplicate stationids and create a comma-separated list
+                        const uniqueStationIds = [...new Set(stationidArray)].join(',');
+
+                        // URL for the website with all stationids
+                        const url = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${uniqueStationIds}&findId=*`;
+
+                        // Open the link in a popup window
+                        FMDXWindow = window.open(url, "_blank", "width=600,height=400"); // Adjust window size as needed
+
+                    }
+
+                    // Variable to track the window state
+                    let FMLISTWindow = null;
+                    let isOpenFMLIST = false;
+
+                    // Function to create the FMLIST button and link it to the overlay
+                    function createFMLISTButton() {
+                        // Create a container for the button or placeholder
+                        const container = document.createElement("div");
+                        container.style.width = "80px";
+                        container.style.height = "20px";
+                        container.style.marginRight = "0px";
+                        container.style.marginLeft = "5px";
+                        container.style.display = "flex";
+                        container.style.alignItems = "center";
+                        container.style.justifyContent = "center";
+                        container.style.borderRadius = '0px';
+
+                        // Check if FMLIST_OM_ID is not empty
+                        if (FMLIST_OM_ID) {
+                            // Create the button
+                            const FMLISTButton = document.createElement("button");
+                            FMLISTButton.textContent = "FMLIST";
+                            FMLISTButton.style.width = "100%";
+                            FMLISTButton.style.height = "100%";
+                            FMLISTButton.style.borderRadius = '0px';
+
+                            // Function to update the button's class based on station
+                            function updateFMLISTButtonClass() {
+                                const data = previousDataByFrequency[currentFrequency];
+                                const station = data ? data.station : '';
+                                stationid = data ? data.stationid : '';
+
+                                if (station !== '' && FMLIST_OM_ID && !isInBlacklist(currentFrequency, blacklist)) {
+                                    FMLISTButton.classList.remove('bg-color-2');
+                                    FMLISTButton.classList.add('bg-color-4');
+                                    FMLISTButton.classList.remove('inactive');
+                                    FMLISTButton.classList.add('active');
+                                    FMLISTButton.disabled = false;
+                                } else {
+                                    FMLISTButton.classList.remove('bg-color-4');
+                                    FMLISTButton.classList.add('bg-color-2');
+                                    FMLISTButton.classList.remove('active');
+                                    FMLISTButton.classList.add('inactive');
+                                    FMLISTButton.disabled = true;
+                                }
+                            }
+
+                            // Event listener for button click
+                            FMLISTButton.addEventListener("click", function () {
+                                if (stationid > 0) {
+                                    // Check if the popup window is already open
+                                    if (isOpenFMLIST && FMLISTWindow && !FMLISTWindow.closed) {
+                                        // Close if already open
+                                        FMLISTWindow.close();
+                                        isOpenFMLIST = false;
+                                    } else {
+                                        // Open if not already open
+                                        const data = previousDataByFrequency[currentFrequency];
+                                        openFMLISTPage(data.distance, data.azimuth, data.itu);
+                                        isOpenFMLIST = true;
+                                    }
+                                } else {
+                                    alert(`Station-ID: ${stationid} is not compatible with FMLIST Database!`);
+                                }
+                            });
+
+                            // Set an interval to continually check and update the button's class
+                            setInterval(updateFMLISTButtonClass, 100); // Check every 100 milliseconds
+
+                            // Add the button to the container
+                            container.appendChild(FMLISTButton);
+                        }
+
+                        return container;
+                    }
+
+                    // Function to open the FMLIST link in a popup window
+                    function openFMLISTPage(distance, azimuth, itu) {
+                        // URL for the website
+                        const url = `https://www.fmlist.org/fi_inslog.php?lfd=${stationid}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}`;
+
+                        // Open the link in a popup window
+                        FMLISTWindow = window.open(url, "_blank", "width=800,height=820"); // Adjust the window size as needed
+                    }
+
+                    // Add CSS to remove hover effects for inactive buttons
+                    const style = document.createElement('style');
+                    style.innerHTML = `
+                        .inactive {
+                            pointer-events: none;
+                            cursor: not-allowed;
+                        }
+                        .inactive:hover {
+                            background-color: inherit; /* Remove hover effects */
+                        }
+                    `;
+                    document.head.appendChild(style);
+
+                    // Function to check if a combined data entry exists in the logDataArray
+                    function checkIfExists(currentFrequency, picode, station, city, logDataArray) {
+                        const combinedData = `${currentFrequency} ${picode} ${station} ${city}`;
+
+                        const exists = logDataArray.some(entry => {
+                            const [,, entryFrequency, entryPicode, , entryStation, entryCity] = entry.split('|').map(value => value.trim());
+
+                            return entryFrequency === currentFrequency &&
+                                   entryPicode === picode &&
+                                   entryStation === station &&
+                                   entryCity === city;
+                        });
+
+                        return exists;
+                    }
+
+                    // Function to check if a frequency is in the blacklist
+                    function isInBlacklist(currentFrequency, blacklist) {
+                        return blacklist.some(entry => entry.split(' ').includes(currentFrequency));
+                    }
+
+                    // Function to display extracted data
+                    async function displayExtractedData() {
+                        const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
+                        const now = new Date();
+                        const date = formatDate(now);
+                        let time = formatTime(now);
+
+                        if (UTCtime) {
+                            time = getCurrentUTC(); // Time in UTC
+                        }
+
+                        const currentFrequencyWithSpaces = padLeftWithSpaces(currentFrequency, 7);
+                        const data = previousDataByFrequency[currentFrequency];
+
+                        const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
+
+                        let station = "";
+                        let city = "";
+                        let itu = "";
+                        let pol = "";
+                        let erpTxt = "";
+                        let distance = "";
+                        let azimuth = "";
+                        let picode = "";
+                        let ps = "";
+                        let stationid = "";
+
+                        station = Screen === 'ultrasmall' ? truncateString(padRightWithSpaces(data.station, 19), 19) : Screen === 'small' ? truncateString(padRightWithSpaces(data.station, 23), 23) : truncateString(padRightWithSpaces(data.station, 25), 25);
+                        city = Screen === 'ultrasmall' ? truncateString(padRightWithSpaces(data.city, 15), 15) : Screen === 'small' ? truncateString(padRightWithSpaces(data.city, 19), 19) : truncateString(padRightWithSpaces(data.city, 21), 21);
+                        itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
+                        pol = truncateString(data.pol, 1);
+                        erpTxt = truncateString(padLeftWithSpaces(String(data.erp), 6), 6);
+                        distance = truncateString(padLeftWithSpaces(data.distance, 4), 4);
+                        azimuth = truncateString(padLeftWithSpaces(data.azimuth, 3), 3);
+                        picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
+                        ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
+                        stationid = data.stationid;
+                        picode_clean = data.picode;
+
+                        if (currentFrequency !== previousFrequency || previousFrequency === '') {
+                            dateFilter = formatDate(now);
+                            if (UTCtime) {
+                                timeFilter = getCurrentUTC(); // Time in UTC
+                            } else {
+                                timeFilter = formatTime(now);
+                            }
+                            if (data.picode.length > 1) {
+                                previousFrequency = currentFrequency;
+                                NewLine = 'true';
+                                id = '';
+                                dateFilter = formatDate(now);
+                                Savepicode = picode_clean;
+                            }
+                        }
+
+                        if (!FilterState) {
+                            if (UTCtime) {
+                                timeFilter = getCurrentUTC(); // Time in UTC
+                            } else {
+                                timeFilter = formatTime(now);
+                            }
+                        }
+
+                        const outputText = station
+                            ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
+                            : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
+
+                        const outputTextFilter = station
+                            ? `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
+                            : `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
+
+                        let outputArray = station
+                            ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
+                            : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
+
+                        let outputArrayFilter = station
+                            ? `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
+                            : `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
+
+                        if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
+                            const newOutputDiv = document.createElement("div");
+                            newOutputDiv.style.whiteSpace = "pre-wrap";
+                            newOutputDiv.style.fontSize = "16px";
+                            newOutputDiv.style.marginBottom = "-1px";
+                            newOutputDiv.style.padding = "0 10px";
+                            let lastOutputArray;
+
+                            if (NewLine === 'true' && data.picode.length > 1 || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== '')) {
+                                if (dataCanvas instanceof Node) {
+                                    dataCanvas.appendChild(newOutputDiv);
+                                }
+
+                                if (!picode.includes('??') && !picode.includes('???')) {
+                                    if (FilterState && data.picode.length > 1) {
+                                        const lastOutputDiv = dataCanvas.lastChild;
+                                        lastOutputDiv.textContent = outputTextFilter;
+                                    }
+                                    lastOutputArray = outputArrayFilter;
+                                }
+
+                                if (FilterState && data.picode.length > 1) {
+                                    FilteredlogDataArray[FilteredlogDataArray.length + 1] = lastOutputArray;
+                                }
+
+                                NewLine = 'false';
+                            }
+
+                            if ((ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???') && data.picode.length > 1) {
+                                if (FilterState) {
+                                    const lastOutputDiv = dataCanvas.lastChild;
+                                    lastOutputDiv.textContent = outputTextFilter;
+                                }
+
+                                FilteredlogDataArray[FilteredlogDataArray.length - 1] = outputArrayFilter;
+                                SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
+                            }
+
+                            if (NewLine === 'true' && data.picode.length > 1 || Savepicode !== picode_clean || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
+                                if (!FilterState) {
+                                    if (dataCanvas instanceof Node) {
+                                        dataCanvas.appendChild(newOutputDiv);
+                                    }
+                                    if (data.picode.length > 1) {
+                                        const lastOutputDiv = dataCanvas.lastChild;
+                                        lastOutputDiv.textContent = outputText;
+                                    }
+                                }
+
+                                if (data.picode.length > 1) {
+                                    logDataArray[logDataArray.length + 1] = outputArray;
+                                }
+
+                                NewLine = 'false';
+                            }
+
+                            Savepicode = picode_clean;
+                            Savestation = station;
+                            Savestationid = stationid;
+                            Saveps = ps;
+                            dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+                        }
+                    }
+
+                    // Toggle logger state and update UI accordingly
+                    function toggleLogger() {
+                        const LoggerButton = document.getElementById('Log-on-off');
+                        const ButtonsContainer = document.querySelector('.download-buttons-container');
+                        const antennaImage = document.querySelector('#antenna'); // Ensure ID 'antenna' is correct
+                        isLoggerOn = !isLoggerOn;
+
+                        if (isLoggerOn) {
+                            // Update button appearance
+                            LoggerButton.classList.remove('bg-color-2');
+                            LoggerButton.classList.add('bg-color-4');
+
+                            // Perform actions when logger is on
+                            displaySignalOutput();
+
+                            // Set initial height with delay
+                            setTimeout(adjustDataCanvasHeight, 100);
+                            // Adjust height dynamically on window resize
+                            window.addEventListener('resize', adjustDataCanvasHeight);
+
+                            // Show download buttons or create them if not already present
+                            if (ButtonsContainer) {
+                                ButtonsContainer.style.display = 'flex';
+                            } else {
+                                createDownloadButtons(); // Function to create download buttons if not already created
+                            }
+
+                            // Hide antenna image
+                            if (antennaImage) {
+                                antennaImage.style.visibility = 'hidden';
+                            }
+
+                        } else {
+                            // Update button appearance
+                            LoggerButton.classList.remove('bg-color-4');
+                            LoggerButton.classList.add('bg-color-2');
+
+                            // Perform actions when logger is off
+                            displaySignalCanvas();
+
+                            // Hide download buttons
+                            if (ButtonsContainer) {
+                                ButtonsContainer.style.display = 'none';
+                            }
+
+                            // Show antenna image
+                            if (antennaImage) {
+                                antennaImage.style.visibility = 'visible';
+                            }
+                        }
+                    }
+
+                    // Create CSV download button
+                    function createDownloadButtonCSV() {
+                        const DownloadButtonCSV = document.createElement("button");
+                        DownloadButtonCSV.textContent = "CSV";
+                        DownloadButtonCSV.style.width = "50px";
+                        DownloadButtonCSV.style.height = "20px";
+                        DownloadButtonCSV.style.display = "flex";
+                        DownloadButtonCSV.style.alignItems = "center";
+                        DownloadButtonCSV.style.justifyContent = "center";
+                        DownloadButtonCSV.style.borderRadius = '0px';
+                        DownloadButtonCSV.addEventListener("click", function () {
+                            downloadDataCSV();
+                        });
+
+                        return DownloadButtonCSV;
+                    }
+
+                    // Create HTML download button
+                    function createDownloadButtonHTML() {
+                        const DownloadButtonHTML = document.createElement("button");
+                        DownloadButtonHTML.textContent = "HTML";
+                        DownloadButtonHTML.style.width = "50px";
+                        DownloadButtonHTML.style.height = "20px";
+                        DownloadButtonHTML.style.marginLeft = "5px";
+                        DownloadButtonHTML.style.marginRight = "0px";
+                        DownloadButtonHTML.style.display = "flex";
+                        DownloadButtonHTML.style.alignItems = "center";
+                        DownloadButtonHTML.style.justifyContent = "center";
+                        DownloadButtonHTML.style.borderRadius = '0px';
+                        DownloadButtonHTML.addEventListener("click", function () {
+                            downloadDataHTML();
+                        });
+
+                        return DownloadButtonHTML;
+                    }
+
+                    // Display signal canvas
+                    function displaySignalCanvas() {
+                        const loggingCanvas = document.getElementById('logging-canvas');
+                        if (loggingCanvas) {
+                            loggingCanvas.style.display = 'none';
+                        }
+                        const ContainerRotator = document.getElementById('containerRotator');
+                        if (ContainerRotator) {
+                            ContainerRotator.style.display = 'block';
+                        }
+                        const ContainerAntenna = document.getElementById('Antenna');
+                        if (ContainerAntenna) {
+                            ContainerAntenna.style.display = 'block';
+                        }
+                        const signalCanvas = document.getElementById('signal-canvas');
+                        if (signalCanvas) {
+                            signalCanvas.style.display = 'block';
+                        }
+                    }
+
+                    // Display signal output
+                    function displaySignalOutput() {
+                        const loggingCanvas = document.getElementById('logging-canvas');
+                        if (loggingCanvas) {
+                            loggingCanvas.style.display = 'block';
+                        }
+                        const ContainerRotator = document.getElementById('containerRotator');
+                        if (ContainerRotator) {
+                            ContainerRotator.style.display = 'none';
+                        }
+                        const ContainerAntenna = document.getElementById('Antenna');
+                        if (ContainerAntenna) {
+                            ContainerAntenna.style.display = 'none';
+                            ButtonsContainer.style.marginLeft = "-20.5%";
+                            ButtonsContainer.style.marginTop = "166px";
+                        }
+                        const signalCanvas = document.getElementById('signal-canvas');
+                        if (signalCanvas) {
+                            signalCanvas.style.display = 'none';
+                        }
+                    }
+
+                    // Format date as YYYY-MM-DD
+                    function formatDate(date) {
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        return `${year}-${month}-${day}`;
+                    }
+
+                    // Format time as HH:MM:SS
+                    function formatTime(date) {
+                        const hours = String(date.getHours()).padStart(2, '0');
+                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                        const seconds = String(date.getSeconds()).padStart(2, '0');
+                        return `${hours}:${minutes}:${seconds}`;
+                    }
+
+                    let blacklist = [];
+
+                    // Check and initialize blacklist
+                    function checkBlacklist() {
+                        const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                        const port = window.location.port;
+                        const host = document.location.hostname;
+                        const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
+
+                        fetch(blacklistUrl)
+                            .then(response => {
+                                if (response.ok) {
+                                    return response.text();
+                                } else {
+                                    throw new Error(`Error fetching blacklist: ${response.status} ${response.statusText}`);
+                                }
+                            })
+                            .then(data => {
+                                blacklist = data.split('\n').map(frequency => frequency.trim()).filter(Boolean);
+                                console.log('Blacklist initialized:', blacklist);
+                                setupBlacklistButton();
+                            })
+                            .catch(error => {
+                                console.error('Error checking blacklist:', error.message);
+                                blacklist = [];
+                                setupBlacklistButton();
+                            });
+                    }
+
+                    // Retrieve Filter state from cookies
+                    function getFilterStateFromCookie() {
+                        const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Filter='));
+                        return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: true }; // Default to active state
+                    }
+
+                    // Set Filter state in cookies
+                    function setFilterStateInCookie(state) {
+                        document.cookie = `Filter=${JSON.stringify(state)}; path=/`;
+                    }
+
+                    // Update Filter button appearance based on state
+                    function updateFilterButton(button, state) {
+                        if (!button) {
+                            console.error('Filter button does not exist.');
+                            return;
+                        }
+                        if (!state) {
+                            button.textContent = "FILTER";
+                            button.classList.remove('bg-color-4');
+                            button.classList.add('bg-color-2');
+                        } else {
+                            button.textContent = "FILTER";
+                            button.classList.remove('bg-color-2');
+                            button.classList.add('bg-color-4');
+                            button.style.pointerEvents = "auto"; // Enable hover effect
+                        }
+                    }
+
+                    // Setup Filter button and state
+                    function setupFilterButton() {
+                        let FilterButton = document.getElementById("Filter-button");
+                        const FilterState = getFilterStateFromCookie();
+
+                        if (!FilterButton) {
+                            FilterButton = document.createElement("button");
+                            FilterButton.id = "Filter-button";
+                            FilterButton.style.width = "100px";
+                            FilterButton.style.height = "20px";
+                            FilterButton.style.marginTop = "0px";
+                            FilterButton.style.display = "flex";
+                            FilterButton.style.alignItems = "center";
+                            FilterButton.style.justifyContent = "center";
+                            FilterButton.style.borderRadius = '0px';
+                            FilterButton.style.fontWeight = "bold";
+
+                            setTimeout(() => {
+                                const ContainerAntenna = document.getElementById('Antenna');
+                                if (ContainerAntenna) {
+                                    if (ScannerButtonView) {
+                                        FilterButton.style.marginLeft = "-775px";
+                                    } else {
+                                        FilterButton.style.marginLeft = "-725px";
+                                    }
+                                } else {
+                                    if (ScannerButtonView) {
+                                        FilterButton.style.marginLeft = "150px";
+                                    } else {
+                                        FilterButton.style.marginLeft = "200px";
+                                    }
+                                }
+                            }, 1000);
+
+                            FilterButton.addEventListener("click", () => {
+                                const newState = !getFilterStateFromCookie().state;
+                                setFilterStateInCookie({ state: newState });
+                                updateFilterButton(FilterButton, newState);
+                            });
+
+                            updateFilterButton(FilterButton, FilterState.state);
+                        }
+
+                        return FilterButton;
+                    }
+
+                    // Call setupFilterButton to initialize on page load
+                    setupFilterButton();
+
+                    document.addEventListener("DOMContentLoaded", () => {
+                        setupFilterButton();
+                    });
+
+                    // Retrieve Scanner state from cookies
+                    function getScannerStateFromCookie() {
+                        const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Scanner='));
+                        return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: false };
+                    }
+
+                    // Set Scanner state in cookies
+                    function setScannerStateInCookie(state) {
+                        document.cookie = `Scanner=${JSON.stringify(state)}; path=/`;
+                    }
+
+                    // Update Scanner button appearance based on state
+                    function updateScannerButton(button, state) {
+                        if (!button) {
+                            console.error('Scanner button does not exist.');
+                            return;
+                        }
+                        if (!state) {
+                            button.textContent = "SCANNER";
+                            button.classList.remove('bg-color-4');
+                            button.classList.add('bg-color-2');
+                        } else {
+                            button.textContent = "SCANNER";
+                            button.classList.remove('bg-color-2');
+                            button.classList.add('bg-color-4');
+                            button.style.pointerEvents = "auto"; // Enable hover effect
+                        }
+                    }
+
+                    // Setup Scanner button and state
+                    function setupScannerButton() {
+                        let ScannerButton = document.getElementById("Scanner-button");
+                        const ScannerState = getScannerStateFromCookie();
+
+                        if (!ScannerButton) {
+                            ScannerButton = document.createElement("button");
+                            ScannerButton.id = "Scanner-button";
+                            ScannerButton.style.width = "100px";
+                            ScannerButton.style.height = "20px";
+                            ScannerButton.style.marginLeft = "5px";
+                            ScannerButton.style.marginTop = "0px";
+                            ScannerButton.style.display = "flex";
+                            ScannerButton.style.alignItems = "center";
+                            ScannerButton.style.justifyContent = "center";
+                            ScannerButton.style.borderRadius = '0px';
+                            ScannerButton.style.fontWeight = "bold";
+                            ScannerButton.addEventListener("click", () => {
+                                const newState = !getScannerStateFromCookie().state;
+                                setScannerStateInCookie({ state: newState });
+                                updateScannerButton(ScannerButton, newState);
+                            });
+
+                            updateScannerButton(ScannerButton, ScannerState.state);
+                        }
+
+                        return ScannerButton;
+                    }
+
+                    document.addEventListener("DOMContentLoaded", () => {
+                        setupScannerButton();
+                    });
+
+                    // Setup blacklist button and state
+                    function setupBlacklistButton() {
+                        let blacklistButton = document.getElementById("blacklist-button");
+                        const blacklistState = getBlacklistStateFromCookie();
+
+                        if (!blacklistButton) {
+                            blacklistButton = document.createElement("button");
+                            blacklistButton.id = "blacklist-button";
+                            blacklistButton.style.width = "100px";
+                            blacklistButton.style.height = "20px";
+                            blacklistButton.style.marginLeft = "5px";
+                            blacklistButton.style.marginTop = "0px";
+                            blacklistButton.style.display = "flex";
+                            blacklistButton.style.alignItems = "center";
+                            blacklistButton.style.justifyContent = "center";
+                            blacklistButton.style.borderRadius = '0px';
+                            blacklistButton.style.fontWeight = "bold";
+
+                            if (ScannerButtonView) {
+                                blacklistButton.style.marginRight = "95px";
+                            } else {
+                                blacklistButton.style.marginRight = "145px";
+                            }
+
+                            blacklistButton.addEventListener("click", () => {
+                                const newState = !getBlacklistStateFromCookie().state;
+                                setBlacklistStateInCookie({ state: newState });
+                                updateBlacklistState(newState);
+                            });
+
+                            updateBlacklistButton(blacklistButton, blacklistState.state);
+                        }
+
+                        return blacklistButton;
+                    }
+
+                    // Update hover effect based on file existence
+                    function updateHoverEffect(button, fileExists) {
+                        if (!button) {
+                            console.error('Blacklist button does not exist.');
+                            return;
+                        }
+                        if (!fileExists) {
+                            button.style.pointerEvents = "none"; // Disable hover effect
+                        } else {
+                            button.style.pointerEvents = "auto"; // Enable hover effect
+                        }
+                    }
+
+                    // Update blacklist button appearance based on state
+                    function updateBlacklistButton(button, state, fileExists = true) {
+                        if (!button) {
+                            console.error('Blacklist button does not exist.');
+                            return;
+                        }
+                        if (!state || !fileExists) {
+                            button.textContent = "BLACKLIST";
+                            button.classList.remove('bg-color-4');
+                            button.classList.add('bg-color-2');
+                        } else {
+                            button.textContent = "BLACKLIST";
+                            button.classList.remove('bg-color-2');
+                            button.classList.add('bg-color-4');
+                            button.style.pointerEvents = "auto"; // Enable hover effect
+                        }
+                    }
+
+                    // Retrieve blacklist state from cookies
+                    function getBlacklistStateFromCookie() {
+                        const cookieValue = document.cookie.split('; ').find(row => row.startsWith('blacklist='));
+                        return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: false };
+                    }
+
+                    // Set blacklist state in cookies
+                    function setBlacklistStateInCookie(state) {
+                        document.cookie = `blacklist=${JSON.stringify(state)}; path=/`;
+                    }
+
+                    // Update blacklist state and fetch blacklist if necessary
+                    function updateBlacklistState(state) {
+                        const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                        const port = window.location.port;
+                        const host = document.location.hostname;
+                        const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
+
+                        if (state) {
+                            // Blacklist is ON, fetch the blacklist file
+                            fetch(blacklistUrl, { method: 'HEAD' })
+                                .then(response => {
+                                    if (response.ok) {
+                                        return fetch(blacklistUrl).then(res => res.text());
+                                    } else {
+                                        throw new Error(`Blacklist file not found: ${response.status} ${response.statusText}`);
+                                    }
+                                })
+                                .then(data => {
+                                    blacklist = data.split('\n').map(frequency => frequency.trim()).filter(Boolean);
+                                    console.log('Blacklist enabled:', blacklist);
+                                    updateBlacklistButton(document.getElementById("blacklist-button"), state, true);
+                                    updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
+                                })
+                                .catch(error => {
+                                    console.error('Error checking blacklist:', error.message);
+                                    blacklist = [];
+                                    setBlacklistStateInCookie({ state: false });
+                                    updateBlacklistButton(document.getElementById("blacklist-button"), false, false);
+                                    updateHoverEffect(document.getElementById("blacklist-button"), false); // Update hover effect
+                                });
+                        } else {
+                            // Blacklist is OFF, clear the blacklist
+                            blacklist = [];
+                            console.log('Blacklist disabled');
+                            updateBlacklistButton(document.getElementById("blacklist-button"), state, true);
+                            updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
+                        }
+                    }
+
+                    // Initial check of blacklist state
+                    function checkBlacklist() {
+                        const blacklistState = getBlacklistStateFromCookie().state;
+                        updateBlacklistState(blacklistState); // Ensure blacklist state is correctly set on page load
+                    }
+
+                    document.addEventListener("DOMContentLoaded", () => {
+                        setupBlacklistButton();
+                        checkBlacklist();
+                    });
+
+                    // Check if blacklist file exists
+                    function checkBlacklistFileExistence() {
+                        const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+                        const port = window.location.port;
+                        const host = document.location.hostname;
+                        const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
+
+                        fetch(blacklistUrl, { method: 'HEAD' })
+                            .then(response => {
+                                if (response.ok) {
+                                    updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
+                                } else {
+                                    updateHoverEffect(document.getElementById("blacklist-button"), false); // Update hover effect
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error checking blacklist file existence:', error.message);
+                                updateHoverEffect(document.getElementById("blacklist-button"), false); // Update hover effect
+                            });
+                    }
+
+                    // Initial check of blacklist state and file existence
+                    function checkBlacklist() {
+                        const blacklistState = getBlacklistStateFromCookie().state;
+                        updateBlacklistState(blacklistState); // Ensure blacklist state is correctly set on page load
+                        checkBlacklistFileExistence(); // Check blacklist file existence on page load
+                    }
+
+                    const LoggerButton = document.createElement('button');
+
+                    function initializeLoggerButton() {
+                        setupWebSocket();
+
+                        LoggerButton.classList.add('hide-phone');
+                        LoggerButton.id = 'Log-on-off';
+                        LoggerButton.setAttribute('aria-label', 'LOGGER');
+                        LoggerButton.setAttribute('data-tooltip', 'RDS-LOGGER on/off');
+                        LoggerButton.style.borderRadius = '0px';
+                        LoggerButton.style.width = '100px';
+                        LoggerButton.style.position = 'relative';
+                        LoggerButton.style.marginTop = '16px';
+                        LoggerButton.style.right = '0px';
+                        LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
+                        LoggerButton.classList.add('bg-color-2');
+                        LoggerButton.title = `Plugin Version: ${plugin_version}`;
+
+                        const wrapperElement = document.querySelector('.tuner-info');
+                        if (wrapperElement) {
+                            const buttonWrapper = document.createElement('div');
+                            buttonWrapper.classList.add('button-wrapper');
+                            buttonWrapper.id = 'button-wrapper';
+                            buttonWrapper.appendChild(LoggerButton);
+                            wrapperElement.appendChild(buttonWrapper);
+                            const emptyLine = document.createElement('br');
+                            wrapperElement.appendChild(emptyLine);
+                        }
+
+                        LoggerButton.addEventListener('click', toggleLogger);
+                        displaySignalCanvas();
+                    }
+
+                    // Initialize on window load
+                    window.onload = function () {
+                        initializeLoggerButton();
+                        checkBlacklist();
+                    };
+
+                    async function checkFileExists(url) {
+                        try {
+                            const response = await fetch(url, { method: 'GET' });
+                            return response.ok; // Returns true if the response status is 200-299
+                        } catch (error) {
+                            console.error('Error checking file existence:', error);
+                            return false;
+                        }
+                    }
+
+                    async function downloadDataCSV() {
+                        const now = new Date();
+                        const currentDate = formatDate(now);
+                        const currentTime = formatTime(now);
+                        const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+
+                        const filterState = getFilterStateFromCookie().state;
+                        const scannerState = getScannerStateFromCookie().state;
+
+                        if (scannerState) {
+                            const baseUrl = window.location.origin + '/logs/';
+
+                            // Parse the current date and calculate the previous date
+                            const currentDateFormatted = new Date(currentDate);
+                            const previousDateFormatted = new Date(currentDateFormatted);
+                            previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
+
+                            // Format dates as strings in the format YYYY-MM-DD
+                            const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0];
+                            const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0];
+
+                            // Create file names based on the presence of filterState
+                            const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.csv` : `SCANNER_${formattedCurrentDate}.csv`;
+                            const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.csv` : `SCANNER_${formattedPreviousDate}.csv`;
+
+                            // Construct URLs for both current and previous date files
+                            const fileUrlCurrent = baseUrl + fileNameCurrent;
+                            const fileUrlPrevious = baseUrl + fileNamePrevious;
+
+                            // Check if the file for the current date exists
+                            const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
+                            if (fileExistsCurrent) {
+                                window.open(fileUrlCurrent, '_blank');
+                                return;
+                            } else {
+                                // If the current date file doesn't exist, check for the previous date file
+                                const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
+                                if (fileExistsPrevious) {
+                                    window.open(fileUrlPrevious, '_blank');
+                                    return;
+                                } else {
+                                    // If neither file exists, alert the user
+                                    alert('File does not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
+                                    return;
+                                }
+                            }
+                        }
+
+                        // File does not exist, proceed to generate the CSV content
+                        try {
+                            // Initialize CSV data with headers and metadata
+                            let allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\n`;
+                            allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\n` : `RDS-LOGGER ${currentDate} ${currentTime}\n\n`;
+
+                            allData += UTCtime
+                                ? 'date;time(utc);freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n'
+                                : 'date;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n';
+
+                            // Determine which data array to use based on FilterState
+                            const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
+
+                            // Process each line and append it to allData
+                            dataToUse.forEach(line => {
+                                // Directly replace delimiters without conditional formatting
+                                const formattedLine = line.replace(/\s*\|\s*/g, ";");
+                                allData += formattedLine + '\n';
+                            });
+
+                            // Create a Blob from the CSV data
+                            const blob = new Blob([allData], { type: "text/csv" });
+
+                            // Handle download for different browsers
+                            if (window.navigator.msSaveOrOpenBlob) {
+                                window.navigator.msSaveOrOpenBlob(blob, filename);
+                            } else {
+                                const link = document.createElement("a");
+                                link.href = window.URL.createObjectURL(blob);
+                                link.download = filename;
+                                document.body.appendChild(link); // Append to body to ensure compatibility
+                                link.click();
+                                document.body.removeChild(link); // Clean up
+                                window.URL.revokeObjectURL(link.href);
+                            }
+                        } catch (error) {
+                            console.error('Error in downloadDataCSV:', error);
+                        }
+                    }
+
+                    // Cache for API responses
+                    const apiCache = {};
+
+                    async function checkFileExists(url) {
+                        try {
+                            const response = await fetch(url, { method: 'GET' });
+                            return response.ok; // Returns true if the response status is 200-299
+                        } catch (error) {
+                            console.error('Error checking file existence:', error);
+                            return false;
+                        }
+                    }
+
+                    async function downloadDataHTML() {
+                        const now = new Date();
+                        const currentDate = formatDate(now);
+                        const currentTime = formatTime(now);
+                        const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
+
+                        const filterState = getFilterStateFromCookie().state;
+                        const scannerState = getScannerStateFromCookie().state;
+
+                        if (scannerState) {
+                            const baseUrl = window.location.origin + '/logs/';
+                            const currentDateFormatted = new Date(currentDate);
+                            const previousDateFormatted = new Date(currentDateFormatted);
+                            previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
+
+                            const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+                            const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+                            const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.html` : `SCANNER_${formattedCurrentDate}.html`;
+                            const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.html` : `SCANNER_${formattedPreviousDate}.html`;
+
+                            const fileUrlCurrent = baseUrl + fileNameCurrent;
+                            const fileUrlPrevious = baseUrl + fileNamePrevious;
+
+                            const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
+
+                            if (fileExistsCurrent) {
+                                window.open(fileUrlCurrent, '_blank');
+                                return;
+                            } else {
+                                const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
+                                if (fileExistsPrevious) {
+                                    window.open(fileUrlPrevious, '_blank');
+                                    return;
+                                } else {
+                                    alert('File not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
+                                    return;
+                                }
+                            }
+                        }
+
+                        let allData = htmlTemplate;
+
+                        allData += `${ServerName}<br>${ServerDescription}<br>`;
+                        allData += filterState
+                            ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>`
+                            : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`;
+
+                        allData += UTCtime
+                            ? `<table border="1"><tr><th>DATE</th><th>TIME(UTC)</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>MAP</th><th>FMLIST</th></tr>`
+                            : `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>MAP</th><th>FMLIST</th></tr>`;
+
+                        // Use filteredLogDataArray if filter is active, otherwise use logDataArray
+                        const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
+
+                        dataToUse.forEach(line => {
+                            if (typeof line !== 'string') {
+                                console.error(`Invalid line found: ${line}`);
+                                return; // Skip this iteration if line is not a string
+                            }
+
+                            let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
+
+                            let link1 = id ? `<a href="https://maps.fmdx.org/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
+                            let link2 = id && id > 0 && FMLIST_OM_ID !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
+
+                            allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
+                        });
+
+                        allData += `</table></pre><pre></body></html>`;
+
+                        const blob = new Blob([allData], { type: "text/html" });
+
+                        if (window.navigator.msSaveOrOpenBlob) {
+                            window.navigator.msSaveOrOpenBlob(blob, filename);
+                        } else {
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.target = "_blank";
+                            link.click();
+                            window.URL.revokeObjectURL(url);
+                        }
+                    }
+
+                    function getCurrentUTC() {
+                        // Get the current time in UTC
+                        const now = new Date();
+
+                        // Extract the UTC hours, minutes, and seconds
+                        const hours = String(now.getUTCHours()).padStart(2, '0');
+                        const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+                        const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+
+                        // Format the time in HH:MM:SS format
+                        const utcTime = `${hours}:${minutes}:${seconds}`;
+
+                        return utcTime;
+                    }
+
+                })();
+            })();
+
+        })
+        .catch(error => {
+            console.log("RDS-Logger not loading configPlugin.json:");
+        });
 }
 
-// Immediately invoked function expression (IIFE) to encapsulate the loggerPlugin code
-(() => {
-    const loggerPlugin = (() => {
-        let displayedPiCodes = [];
-        let logDataArray = [];
-        let FilteredlogDataArray = [];
-        const previousDataByFrequency = {};
-        let currentFrequency = "";
-        let previousFrequency = "";
-        let autoScanSocket;
-        const ServerName = document.title;
-        const metaTag = document.querySelector('meta[property="og:description"]');
-        const content = metaTag ? metaTag.getAttribute('content') : null;
-        const ServerDescription = content ? content.replace('Server description: ', '') : null;
-        let lastBlacklistFrequency = null;
-        let NewLine = 'false';
-        let stationidAll = '';
-        let id = '';
-        let loopCounter = 0;
-        let scrollCounter = 0;
-        let SaveFrequency = '';
-        let Savepicode = '';
-        let Savestation = '';
-        let Savestationid = '';
-        let Saveps = '';
-        let dateFilter = '';
-        let timeFilter = '';
-        let picode_clean = '';
-
-        console.log('ServerName:', ServerName);
-        console.log('ServerDescription:', ServerDescription);
-
-        // Setup WebSocket connection
-        async function setupWebSocket() {
-            if (!autoScanSocket || autoScanSocket.readyState === WebSocket.CLOSED) {
-                try {
-                    autoScanSocket = await window.socketPromise;
-
-                    autoScanSocket.addEventListener("open", () => {
-                        console.log("WebSocket connected.");
-                    });
-
-                    autoScanSocket.addEventListener("message", handleWebSocketMessage);
-
-                    autoScanSocket.addEventListener("error", (error) => {
-                        console.error("WebSocket error:", error);
-                    });
-
-                    autoScanSocket.addEventListener("close", (event) => {
-                        console.log("WebSocket closed:", event);
-                        // Optionally, attempt to reconnect after a delay
-                        setTimeout(setupWebSocket, 5000);
-                    });
-
-                } catch (error) {
-                    console.error("Failed to setup WebSocket:", error);
-                }
-            }
-        }
-
-        const LAT = localStorage.getItem('qthLatitude');
-        const LON = localStorage.getItem('qthLongitude');
-
-        // Log the coordinates to the console
-        console.log('Latitude:', LAT);
-        console.log('Longitude:', LON);
-
-        // Handle incoming WebSocket messages
-        function handleWebSocketMessage(event) {
-            const eventData = JSON.parse(event.data);
-            // console.log(eventData);
-            const frequency = eventData.freq;
-
-            // Process data if frequency is not in the blacklist
-            const txInfo = eventData.txInfo;
-            // console.log(txInfo);
-
-            let ps = eventData.ps;
-            if ((eventData.ps_errors !== "0,0,0,0,0,0,0,1") && (eventData.ps_errors !== "0,0,0,0,0,0,0,0")) {
-                ps += "?";
-            }
-
-            previousDataByFrequency[frequency] = {
-                picode: eventData.pi,
-                ps: ps,
-                station: txInfo ? txInfo.tx : "",
-                pol: txInfo ? txInfo.pol : "",
-                erp: txInfo ? txInfo.erp : "",
-                city: txInfo ? txInfo.city : "",
-                itu: txInfo ? txInfo.itu : "",
-                distance: txInfo ? txInfo.dist : "",
-                azimuth: txInfo ? txInfo.azi : "",
-                stationid: txInfo ? txInfo.id : ""
-            };
-
-            currentFrequency = frequency;
-            displayExtractedData();
-        }
-
-        // Create container for extracted data
-        const extractedDataContainer = document.createElement("div");
-        extractedDataContainer.id = "extracted-data-container";
-        document.body.appendChild(extractedDataContainer);
-
-        let isLoggerOn = false;
-
-        // Ensure parent container exists
-        let parentContainer = document.querySelector(".canvas-container");
-        if (!parentContainer) {
-            parentContainer = document.createElement("div");
-            parentContainer.className = "canvas-container hide-phone";
-            document.body.appendChild(parentContainer);
-        }
-
-        // Retrieve styles for further use
-        const h2Style = window.getComputedStyle(document.querySelector('h2'));
-        const borderColor = h2Style.color;
-
-        // Create the logging canvas and append it to the parent container
-        let loggingCanvas = document.createElement("div");
-        loggingCanvas.id = "logging-canvas";
-        loggingCanvas.style.height = "95%";
-        loggingCanvas.style.width = "97%";
-        loggingCanvas.style.marginTop = "0px";
-        loggingCanvas.style.marginRight = "0px";
-        loggingCanvas.style.marginLeft = "20px";
-        loggingCanvas.style.display = 'none';
-        loggingCanvas.style.border = "1px solid ";
-        loggingCanvas.classList.add('color-4');
-        loggingCanvas.style.backgroundColor = "var(--color-1-transparent)";
-        loggingCanvas.style.whiteSpace = "nowrap"; // Prevent line wrapping
-        parentContainer.appendChild(loggingCanvas);
-
-        // Create a container for both titleDiv and dataCanvas
-        const scrollContainer = document.createElement("div");
-        scrollContainer.style.overflowX = "auto"; // Enable horizontal scroll bar
-        scrollContainer.style.display = "block";
-        scrollContainer.style.whiteSpace = "nowrap"; // Prevent line wrapping
-        scrollContainer.style.width = "100%";
-        scrollContainer.style.height = "100%";
-        scrollContainer.style.whiteSpace = "pre-wrap";
-        loggingCanvas.appendChild(scrollContainer);
-
-        const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
-        // console.log(loggingCanvasWidth);
-
-        // Create and configure title div
-        const titleDiv = document.createElement("div");
-
-        if (UTCtime) {
-            if (Screen === 'ultrasmall') {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
-            } else if (Screen === 'small') {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
-            } else {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
-            }
-        } else {
-            if (Screen === 'ultrasmall') {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                 CITY             ITU POL    ERP  DIST   AZ</strong></h2>";
-            } else if (Screen === 'small') {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
-            } else {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
-            }
-        }
-
-        titleDiv.style.padding = "10px";
-        titleDiv.style.display = "block"; // Allow block display to stack elements vertically
-        titleDiv.style.fontFamily = "Monospace"; // Customize font
-        titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
-        titleDiv.style.overflowX = "auto"; // Enable horizontal scroll bar
-        titleDiv.style.width = "max-content"; // Ensure content dictates width
-        titleDiv.style.whiteSpace = "pre-wrap";
-        scrollContainer.appendChild(titleDiv);
-
-        // Create and configure data canvas
-        let dataCanvas = document.createElement("div");
-        dataCanvas.id = "output-canvas";
-        dataCanvas.style.overflowX = "auto"; // Enable horizontal scroll bar
-        dataCanvas.style.color = "white";
-        dataCanvas.style.whiteSpace = "nowrap"; // Ensure no line wrapping
-        dataCanvas.style.fontFamily = "Monospace";
-        dataCanvas.style.position = "relative";
-        dataCanvas.style.padding = "0";
-        dataCanvas.style.whiteSpace = "nowrap";
-        dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
-        dataCanvas.style.width = "max-content"; // Ensure content dictates width
-        dataCanvas.style.height = "65%";
-        dataCanvas.style.maxHeight = "65%";
-        scrollContainer.appendChild(dataCanvas);
-
-        // Adjust dataCanvas height based on scrollContainer height
-        function adjustDataCanvasHeight() {
-            let scrollContainerHeight = scrollContainer.getBoundingClientRect().height;
-            scrollContainerHeight = Math.floor(scrollContainerHeight); // Convert to integer
-
-            console.log('scrollContainerHeight:', scrollContainerHeight);
-
-            if (scrollContainerHeight > 112) {
-                dataCanvas.style.height = "65%";
-                dataCanvas.style.maxHeight = "65%";
-                dataCanvas.style.marginTop = "0px";
-            } else {
-                dataCanvas.style.height = "48%";
-                dataCanvas.style.maxHeight = "48%";
-                dataCanvas.style.marginTop = "-10px";
-            }
-        }
-
-        // Utility function to pad strings with spaces
-        function padLeftWithSpaces(str, targetLength) {
-            const spacesToAdd = targetLength - str.length;
-            return spacesToAdd <= 0 ? str : " ".repeat(spacesToAdd) + str;
-        }
-
-        function padRightWithSpaces(text, desiredLength) {
-            const spacesToAdd = Math.max(0, desiredLength - text.length);
-            return text + " ".repeat(spacesToAdd);
-        }
-
-        // Utility function to truncate strings if they exceed a certain length
-        function truncateString(str, maxLength) {
-            return str.length > maxLength ? str.substring(0, maxLength) : str;
-        }
-
-        let ButtonsContainer = document.querySelector(".download-buttons-container");
-
-        if (!ButtonsContainer) {
-            ButtonsContainer = document.createElement("div");
-            ButtonsContainer.className = "download-buttons-container";
-            ButtonsContainer.style.display = "none";
-            ButtonsContainer.style.position = "relative";
-            ButtonsContainer.style.marginLeft = "0px";
-            ButtonsContainer.style.marginTop = "0px";
-            ButtonsContainer.style.textAlign = "left"; // Ensures left alignment
-            
-            const FilterButton = setupFilterButton();
-            if (FilterButton instanceof Node) {
-                ButtonsContainer.appendChild(FilterButton);
-            }
-            
-            if (ScannerButtonView) {
-                const ScannerButton = setupScannerButton();
-                if (ScannerButton instanceof Node) {
-                    ButtonsContainer.appendChild(ScannerButton);
-                }
-            }
-            
-            const blacklistButton = setupBlacklistButton();
-            if (blacklistButton instanceof Node) {
-                ButtonsContainer.appendChild(blacklistButton);
-            }
-            
-            const DownloadButtonCSV = createDownloadButtonCSV();
-            if (DownloadButtonCSV instanceof Node) {
-                ButtonsContainer.appendChild(DownloadButtonCSV);
-            }
-            
-            const DownloadButtonHTML = createDownloadButtonHTML();
-            if (DownloadButtonHTML instanceof Node) {
-                ButtonsContainer.appendChild(DownloadButtonHTML);
-            }
-            
-            const FMDXButton = createFMDXButton();
-            if (FMDXButton instanceof Node) {
-                ButtonsContainer.appendChild(FMDXButton);
-            }
-
-            const FMLISTButton = createFMLISTButton();
-            if (FMLISTButton instanceof Node) {
-                ButtonsContainer.appendChild(FMLISTButton);
-            }
-
-            if (parentContainer instanceof Node) {
-                parentContainer.appendChild(ButtonsContainer);
-            }
-        }
-
-        // Variable to track the window state
-        let FMDXWindow = null;
-        let isOpenFMDX = false;
-
-        // Function to create the FMDX button and link it to the overlay
-        function createFMDXButton() {
-            // Create the button
-            const FMDXButton = document.createElement("button");
-            FMDXButton.textContent = "FMDX";
-            FMDXButton.style.width = "80px";
-            FMDXButton.style.height = "20px";
-            FMDXButton.style.marginLeft = "140px";
-            FMDXButton.style.display = "flex";
-            FMDXButton.style.alignItems = "center";
-            FMDXButton.style.justifyContent = "center";
-            FMDXButton.style.borderRadius = '0px';
-
-            // Function to update the button's class based on station
-            function updateFMDXButtonClass() {
-                const data = previousDataByFrequency[currentFrequency];
-                const station = data ? data.station : '';
-                stationid = data ? data.stationid : '';
-        
-                if (station !== '' && !isInBlacklist(currentFrequency, blacklist)) {
-                    FMDXButton.classList.remove('bg-color-2');
-                    FMDXButton.classList.add('bg-color-4');
-                    FMDXButton.classList.remove('inactive'); 
-                    FMDXButton.classList.add('active'); 
-                    FMDXButton.disabled = false;
-                } else {
-                    FMDXButton.classList.remove('bg-color-4');
-                    FMDXButton.classList.add('bg-color-2');
-                    FMDXButton.classList.remove('active'); 
-                    FMDXButton.classList.add('inactive'); 
-                    FMDXButton.disabled = true;
-                }
-            }
-
-            // Event listener for button click
-            FMDXButton.addEventListener("click", function () {
-                const data = previousDataByFrequency[currentFrequency];
-                const station = data ? data.station : '';
-                if (stationid) {
-                    // Check if the popup window is already open
-                    if (isOpenFMDX && FMDXWindow && !FMDXWindow.closed) {
-                        // Close if already open
-                        FMDXWindow.close();
-                        isOpenFMDX = false;
-                    } else {
-                        // Open if not already open
-                        openFMDXPage();
-                        isOpenFMDX = true;
-                    }
-                }
-            });
-
-            // Set an interval to continually check and update the button's class
-            setInterval(updateFMDXButtonClass, 100); // Check every 100 milliseconds
-
-            return FMDXButton;
-        }
-
-        // Function to open the FMDX link in a popup window
-        function openFMDXPage() {
-            // URL for the website
-            const url = `https://maps.fmdx.org/#qth=${LAT},${LON}&id=${stationid}&findId=*`;
-
-            // Open the link in a popup window
-            FMDXWindow = window.open(url, "_blank", "width=600,height=400"); // Adjust the window size as needed
-        }
-
-        // Variable to track the window state
-        let FMLISTWindow = null;
-        let isOpenFMLIST = false;
-
-        // Function to create the FMLIST button and link it to the overlay
-        function createFMLISTButton() {
-            // Create a container for the button or placeholder
-            const container = document.createElement("div");
-            container.style.width = "80px";
-            container.style.height = "20px";
-            container.style.marginRight = "0px";
-            container.style.marginLeft = "5px";
-            container.style.display = "flex";
-            container.style.alignItems = "center";
-            container.style.justifyContent = "center";
-            container.style.borderRadius = '0px';
-
-            // Check if FMLIST_OM_ID is not empty
-            if (FMLIST_OM_ID) {
-                // Create the button
-                const FMLISTButton = document.createElement("button");
-                FMLISTButton.textContent = "FMLIST";
-                FMLISTButton.style.width = "100%";
-                FMLISTButton.style.height = "100%";
-                FMLISTButton.style.borderRadius = '0px';
-
-                // Function to update the button's class based on station
-                function updateFMLISTButtonClass() {
-                    const data = previousDataByFrequency[currentFrequency];
-                    const station = data ? data.station : '';
-                    stationid = data ? data.stationid : '';
-
-                    if (station !== '' && FMLIST_OM_ID && !isInBlacklist(currentFrequency, blacklist)) {
-                        FMLISTButton.classList.remove('bg-color-2');
-                        FMLISTButton.classList.add('bg-color-4');
-                        FMLISTButton.classList.remove('inactive'); 
-                        FMLISTButton.classList.add('active'); 
-                        FMLISTButton.disabled = false;
-                    } else {
-                        FMLISTButton.classList.remove('bg-color-4');
-                        FMLISTButton.classList.add('bg-color-2');
-                        FMLISTButton.classList.remove('active'); 
-                        FMLISTButton.classList.add('inactive'); 
-                        FMLISTButton.disabled = true;
-                    }
-                }
-
-                // Event listener for button click
-                FMLISTButton.addEventListener("click", function () {
-                    if (stationid > 0) {
-                        // Check if the popup window is already open
-                        if (isOpenFMLIST && FMLISTWindow && !FMLISTWindow.closed) {
-                            // Close if already open
-                            FMLISTWindow.close();
-                            isOpenFMLIST = false;
-                        } else {
-                            // Open if not already open
-                            const data = previousDataByFrequency[currentFrequency];
-                            openFMLISTPage(data.distance, data.azimuth, data.itu);
-                            isOpenFMLIST = true;
-                        }
-                    } else {
-                        alert(`Station-ID: ${stationid} is not compatible with FMLIST Database!`);
-                    }
-                });
-
-                // Set an interval to continually check and update the button's class
-                setInterval(updateFMLISTButtonClass, 100); // Check every 100 milliseconds
-
-                // Add the button to the container
-                container.appendChild(FMLISTButton);
-            }
-
-            return container;
-        }
-
-        // Function to open the FMLIST link in a popup window
-        function openFMLISTPage(distance, azimuth, itu) {
-            // URL for the website
-            const url = `https://www.fmlist.org/fi_inslog.php?lfd=${stationid}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}`;
-
-            // Open the link in a popup window
-            FMLISTWindow = window.open(url, "_blank", "width=800,height=820"); // Adjust the window size as needed
-        }
-
-        // Add CSS to remove hover effects for inactive buttons
-        const style = document.createElement('style');
-        style.innerHTML = `
-            .inactive {
-                pointer-events: none;
-                cursor: not-allowed;
-            }
-            .inactive:hover {
-                background-color: inherit; /* Remove hover effects */
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Function to check if a combined data entry exists in the logDataArray
-        function checkIfExists(currentFrequency, picode, station, city, logDataArray) {
-            const combinedData = `${currentFrequency} ${picode} ${station} ${city}`;
-
-            const exists = logDataArray.some(entry => {
-                const [,, entryFrequency, entryPicode, , entryStation, entryCity] = entry.split('|').map(value => value.trim());
-
-                return entryFrequency === currentFrequency &&
-                       entryPicode === picode &&
-                       entryStation === station &&
-                       entryCity === city; 
-            });
-
-            return exists;
-        }
-
-        // Function to check if a frequency is in the blacklist
-        function isInBlacklist(currentFrequency, blacklist) {
-            return blacklist.some(entry => entry.split(' ').includes(currentFrequency));
-        }
-
-        // Function to display extracted data
-        async function displayExtractedData() {
-            const FilterState = getFilterStateFromCookie().state; // Automatically read the status of the filter button
-            const now = new Date();
-            const date = formatDate(now);
-            let time = formatTime(now);
-            
-            if (UTCtime) {
-                time = getCurrentUTC(); // Time in UTC
-            }
-
-            const currentFrequencyWithSpaces = padLeftWithSpaces(currentFrequency, 7);
-            const data = previousDataByFrequency[currentFrequency];
-
-            const loggingCanvasWidth = parentContainer.getBoundingClientRect().width;
-
-            let station = "";
-            let city = "";
-            let itu = "";
-            let pol = "";
-            let erpTxt = "";
-            let distance = "";
-            let azimuth = "";
-            let picode = "";
-            let ps = "";
-            let stationid = "";
-
-            if (TestMode === 'true' && currentFrequency === test_frequency) {   
-                station = Screen === 'ultrasmall'
-                    ? truncateString(padRightWithSpaces(test_station, 19), 19)
-                    : Screen === 'small'
-                        ? truncateString(padRightWithSpaces(test_station, 23), 23)
-                        : truncateString(padRightWithSpaces(test_station, 25), 25);               
-                city = Screen === 'ultrasmall'
-                    ? truncateString(padRightWithSpaces(test_city, 15), 15)
-                    : Screen === 'small'
-                        ? truncateString(padRightWithSpaces(test_city, 19), 19)
-                        : truncateString(padRightWithSpaces(test_city, 21), 21);
-                itu = truncateString(padLeftWithSpaces(test_itu, 3), 3);
-                pol = truncateString(test_pol, 1);
-                erpTxt = truncateString(padLeftWithSpaces(String(test_erp), 6), 6);
-                distance = truncateString(padLeftWithSpaces(test_distance, 4), 4);
-                azimuth = truncateString(padLeftWithSpaces(test_azimuth, 3), 3);
-                picode = truncateString(padRightWithSpaces(test_picode, 7), 7);
-                ps = truncateString(padRightWithSpaces(test_ps.replace(/ /g, "_"), 9), 9);
-                stationid = test_stationid;
-            } else {
-                station = Screen === 'ultrasmall'
-                    ? truncateString(padRightWithSpaces(data.station, 19), 19)
-                    : Screen === 'small'
-                        ? truncateString(padRightWithSpaces(data.station, 23), 23)
-                        : truncateString(padRightWithSpaces(data.station, 25), 25);               
-                city = Screen === 'ultrasmall'
-                    ? truncateString(padRightWithSpaces(data.city, 15), 15)
-                    : Screen === 'small'
-                        ? truncateString(padRightWithSpaces(data.city, 19), 19)
-                        : truncateString(padRightWithSpaces(data.city, 21), 21);
-                itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
-                pol = truncateString(data.pol, 1);
-                erpTxt = truncateString(padLeftWithSpaces(String(data.erp), 6), 6);
-                distance = truncateString(padLeftWithSpaces(data.distance, 4), 4);
-                azimuth = truncateString(padLeftWithSpaces(data.azimuth, 3), 3);
-                picode = truncateString(padRightWithSpaces(data.picode, 7), 7);
-                ps = truncateString(padRightWithSpaces(data.ps.replace(/ /g, "_"), 9), 9);
-                stationid = data.stationid;
-                picode_clean = data.picode;
-            }
-
-            if (currentFrequency !== previousFrequency || previousFrequency === '' ) { 							
-                dateFilter = formatDate(now);				
-                if (UTCtime) {
-                    timeFilter = getCurrentUTC(); // Time in UTC
-                } else {
-                    timeFilter = formatTime(now);
-                }
-                if (data.picode.length > 1 ) {
-                    previousFrequency = currentFrequency;
-                    NewLine = 'true';
-                    id = '';
-                    dateFilter = formatDate(now);
-                    Savepicode = picode_clean;
-                }
-            }
-
-            if (!FilterState) {	
-                if (UTCtime) {
-                    timeFilter = getCurrentUTC(); // Time in UTC
-                } else {
-                    timeFilter = formatTime(now);
-                }
-            }
-
-            const outputText = station 
-                ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
-                : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
-
-            const outputTextFilter = station 
-                ? `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
-                : `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
-
-            let outputArray = station 
-                ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
-                : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
-
-            let outputArrayFilter = station 
-                ? `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
-                : `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
-
-            if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
-                const newOutputDiv = document.createElement("div");
-                newOutputDiv.style.whiteSpace = "pre-wrap";
-                newOutputDiv.style.fontSize = "16px";
-                newOutputDiv.style.marginBottom = "-1px";
-                newOutputDiv.style.padding = "0 10px";
-                let lastOutputArray;
-
-                if (NewLine === 'true' && data.picode.length > 1 || picode_clean.replace(/\?/g, '') !== Savepicode.replace(/\?/g, '') && (ps !== '?' && station !== '')) {		
-                    if (dataCanvas instanceof Node) {
-                        dataCanvas.appendChild(newOutputDiv);
-                    }
-
-                    if (!picode.includes('??') && !picode.includes('???')) {
-                        if (FilterState && data.picode.length > 1) {
-                            const lastOutputDiv = dataCanvas.lastChild;							
-                            lastOutputDiv.textContent = outputTextFilter;
-                        }
-                        lastOutputArray = outputArrayFilter;
-                    }
-
-                    if (FilterState && data.picode.length > 1) {
-                        FilteredlogDataArray[FilteredlogDataArray.length +1] = lastOutputArray;
-                    }
-
-                    NewLine = 'false'; 				
-                }
-
-                if ((ps !== '?' && station !== '') && !picode_clean.includes('??') && !picode_clean.includes('???') && data.picode.length > 1 ) {
-                    if (FilterState) {							
-                        const lastOutputDiv = dataCanvas.lastChild;
-                        lastOutputDiv.textContent = outputTextFilter;
-                    }	
-
-                    FilteredlogDataArray[FilteredlogDataArray.length -1] = outputArrayFilter;
-                    SaveFrequency = currentFrequencyWithSpaces.replace(/\s/g, '');
-                }
-
-                if (NewLine === 'true' && data.picode.length > 1 || Savepicode !== picode_clean || Savestation !== station && station !== '' || Saveps !== ps && ps !== '') {
-                    if (!FilterState) {
-                        if (dataCanvas instanceof Node) {
-                            dataCanvas.appendChild(newOutputDiv);
-                        }
-                        if (data.picode.length > 1) {
-                            const lastOutputDiv = dataCanvas.lastChild;
-                            lastOutputDiv.textContent = outputText;	
-                        }
-                    }
-
-                    if (data.picode.length > 1) {
-                        logDataArray[logDataArray.length +1] = outputArray;	
-                    }
-
-                    NewLine = 'false'; 
-                }
-
-                Savepicode = picode_clean;
-                Savestation = station;
-                Savestationid = stationid;
-                Saveps = ps;
-                dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;					
-            }
-        }
-
-        // Toggle logger state and update UI accordingly
-        function toggleLogger() {
-            const LoggerButton = document.getElementById('Log-on-off');
-            const ButtonsContainer = document.querySelector('.download-buttons-container');
-            const antennaImage = document.querySelector('#antenna'); // Ensure ID 'antenna' is correct
-            isLoggerOn = !isLoggerOn;
-
-            if (isLoggerOn) {
-                // Update button appearance
-                LoggerButton.classList.remove('bg-color-2');
-                LoggerButton.classList.add('bg-color-4');
-                
-                // Perform actions when logger is on
-                displaySignalOutput();
-
-                // Set initial height with delay
-                setTimeout(adjustDataCanvasHeight, 100);
-                // Adjust height dynamically on window resize
-                window.addEventListener('resize', adjustDataCanvasHeight);   
-
-                // Show download buttons or create them if not already present
-                if (ButtonsContainer) {
-                    ButtonsContainer.style.display = 'flex';
-                } else {
-                    createDownloadButtons(); // Function to create download buttons if not already created
-                }
-
-                // Hide antenna image
-                if (antennaImage) {
-                    antennaImage.style.visibility = 'hidden'; 
-                }
-
-            } else {
-                // Update button appearance
-                LoggerButton.classList.remove('bg-color-4');
-                LoggerButton.classList.add('bg-color-2');
-                
-                // Perform actions when logger is off
-                displaySignalCanvas();
-
-                // Hide download buttons
-                if (ButtonsContainer) {
-                    ButtonsContainer.style.display = 'none';
-                }
-
-                // Show antenna image
-                if (antennaImage) {
-                    antennaImage.style.visibility = 'visible'; 
-                }
-            }
-        }
-
-        // Create CSV download button
-        function createDownloadButtonCSV() {
-            const DownloadButtonCSV = document.createElement("button");
-            DownloadButtonCSV.textContent = "CSV";
-            DownloadButtonCSV.style.width = "50px";
-            DownloadButtonCSV.style.height = "20px";
-            DownloadButtonCSV.style.display = "flex";
-            DownloadButtonCSV.style.alignItems = "center";
-            DownloadButtonCSV.style.justifyContent = "center";
-            DownloadButtonCSV.style.borderRadius = '0px';
-            DownloadButtonCSV.addEventListener("click", function () {
-                downloadDataCSV();
-            });
-
-            return DownloadButtonCSV;
-        }
-
-        // Create HTML download button
-        function createDownloadButtonHTML() {
-            const DownloadButtonHTML = document.createElement("button");
-            DownloadButtonHTML.textContent = "HTML";
-            DownloadButtonHTML.style.width = "50px";
-            DownloadButtonHTML.style.height = "20px";
-            DownloadButtonHTML.style.marginLeft = "5px";
-            DownloadButtonHTML.style.marginRight = "0px";
-            DownloadButtonHTML.style.display = "flex";
-            DownloadButtonHTML.style.alignItems = "center";
-            DownloadButtonHTML.style.justifyContent = "center";
-            DownloadButtonHTML.style.borderRadius = '0px';
-            DownloadButtonHTML.addEventListener("click", function () {
-                downloadDataHTML();
-            });
-
-            return DownloadButtonHTML;
-        }
-
-        // Display signal canvas
-        function displaySignalCanvas() {
-            const loggingCanvas = document.getElementById('logging-canvas');
-            if (loggingCanvas) {
-                loggingCanvas.style.display = 'none';
-            }
-            const ContainerRotator = document.getElementById('containerRotator');
-            if (ContainerRotator) {
-                ContainerRotator.style.display = 'block';
-            }
-            const ContainerAntenna = document.getElementById('Antenna');
-            if (ContainerAntenna) {
-                ContainerAntenna.style.display = 'block';
-            }
-            const signalCanvas = document.getElementById('signal-canvas');
-            if (signalCanvas) {
-                signalCanvas.style.display = 'block';
-            }
-        }
-
-        // Display signal output
-        function displaySignalOutput() {
-            const loggingCanvas = document.getElementById('logging-canvas');
-            if (loggingCanvas) {
-                loggingCanvas.style.display = 'block';
-            }
-            const ContainerRotator = document.getElementById('containerRotator');
-            if (ContainerRotator) {
-                ContainerRotator.style.display = 'none';
-            }
-            const ContainerAntenna = document.getElementById('Antenna');
-            if (ContainerAntenna) {
-                ContainerAntenna.style.display = 'none';
-                ButtonsContainer.style.marginLeft = "-20.5%";
-                ButtonsContainer.style.marginTop = "166px";
-            }
-            const signalCanvas = document.getElementById('signal-canvas');
-            if (signalCanvas) {
-                signalCanvas.style.display = 'none';
-            }
-        }
-
-        // Format date as YYYY-MM-DD
-        function formatDate(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Format time as HH:MM:SS
-        function formatTime(date) {
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-            return `${hours}:${minutes}:${seconds}`;
-        }
-
-        let blacklist = [];
-
-        // Check and initialize blacklist
-        function checkBlacklist() {
-            const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-            const port = window.location.port;
-            const host = document.location.hostname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
-
-            fetch(blacklistUrl)
-                .then(response => {
-                    if (response.ok) {
-                        return response.text();
-                    } else {
-                        throw new Error(`Error fetching blacklist: ${response.status} ${response.statusText}`);
-                    }
-                })
-                .then(data => {
-                    blacklist = data.split('\n').map(frequency => frequency.trim()).filter(Boolean);
-                    console.log('Blacklist initialized:', blacklist);
-                    setupBlacklistButton();
-                })
-                .catch(error => {
-                    console.error('Error checking blacklist:', error.message);
-                    blacklist = [];
-                    setupBlacklistButton();
-                });
-        }
-
-        // Retrieve Filter state from cookies
-        function getFilterStateFromCookie() {
-            const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Filter='));
-            return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: true }; // Default to active state
-        }
-
-        // Set Filter state in cookies
-        function setFilterStateInCookie(state) {
-            document.cookie = `Filter=${JSON.stringify(state)}; path=/`;
-        }
-
-        // Update Filter button appearance based on state
-        function updateFilterButton(button, state) {
-            if (!button) {
-                console.error('Filter button does not exist.');
-                return;
-            }
-            if (!state) {
-                button.textContent = "FILTER";
-                button.classList.remove('bg-color-4');
-                button.classList.add('bg-color-2');
-            } else {
-                button.textContent = "FILTER";
-                button.classList.remove('bg-color-2');
-                button.classList.add('bg-color-4');
-                button.style.pointerEvents = "auto"; // Enable hover effect
-            }
-        }
-
-        // Setup Filter button and state
-        function setupFilterButton() {
-            let FilterButton = document.getElementById("Filter-button");
-            const FilterState = getFilterStateFromCookie();
-
-            if (!FilterButton) {
-                FilterButton = document.createElement("button");
-                FilterButton.id = "Filter-button";
-                FilterButton.style.width = "100px";
-                FilterButton.style.height = "20px";               
-                FilterButton.style.marginTop = "0px";
-                FilterButton.style.display = "flex";
-                FilterButton.style.alignItems = "center";
-                FilterButton.style.justifyContent = "center";
-                FilterButton.style.borderRadius = '0px';
-                FilterButton.style.fontWeight = "bold";
-                
-                setTimeout(() => {
-                    const ContainerAntenna = document.getElementById('Antenna');
-                    if (ContainerAntenna) {
-                        if (ScannerButtonView) {
-                            FilterButton.style.marginLeft = "-775px";
-                        } else {
-                            FilterButton.style.marginLeft = "-725px";
-                        }
-                    } else {
-                        if (ScannerButtonView) {
-                            FilterButton.style.marginLeft = "150px";
-                        } else {
-                            FilterButton.style.marginLeft = "200px";
-                        }
-                    }
-                }, 1000); 
-
-                FilterButton.addEventListener("click", () => {
-                    const newState = !getFilterStateFromCookie().state;
-                    setFilterStateInCookie({ state: newState });
-                    updateFilterButton(FilterButton, newState);
-                });
-
-                updateFilterButton(FilterButton, FilterState.state);
-            }
-
-            return FilterButton;
-        }
-
-        // Call setupFilterButton to initialize on page load
-        setupFilterButton();
-
-        document.addEventListener("DOMContentLoaded", () => {
-            setupFilterButton();
-        });
-
-        // Retrieve Scanner state from cookies
-        function getScannerStateFromCookie() {
-            const cookieValue = document.cookie.split('; ').find(row => row.startsWith('Scanner='));
-            return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: false };
-        }
-
-        // Set Scanner state in cookies
-        function setScannerStateInCookie(state) {
-            document.cookie = `Scanner=${JSON.stringify(state)}; path=/`;
-        }
-
-        // Update Scanner button appearance based on state
-        function updateScannerButton(button, state) {
-            if (!button) {
-                console.error('Scanner button does not exist.');
-                return;
-            }
-            if (!state) {
-                button.textContent = "SCANNER";
-                button.classList.remove('bg-color-4');
-                button.classList.add('bg-color-2');
-            } else {
-                button.textContent = "SCANNER";
-                button.classList.remove('bg-color-2');
-                button.classList.add('bg-color-4');
-                button.style.pointerEvents = "auto"; // Enable hover effect
-            }
-        }
-
-        // Setup Scanner button and state
-        function setupScannerButton() {
-            let ScannerButton = document.getElementById("Scanner-button");
-            const ScannerState = getScannerStateFromCookie();
-            
-            if (!ScannerButton) {
-                ScannerButton = document.createElement("button");
-                ScannerButton.id = "Scanner-button";
-                ScannerButton.style.width = "100px";
-                ScannerButton.style.height = "20px";
-                ScannerButton.style.marginLeft = "5px";
-                ScannerButton.style.marginTop = "0px";
-                ScannerButton.style.display = "flex";
-                ScannerButton.style.alignItems = "center";
-                ScannerButton.style.justifyContent = "center";
-                ScannerButton.style.borderRadius = '0px';
-                ScannerButton.style.fontWeight = "bold";
-                ScannerButton.addEventListener("click", () => {
-                    const newState = !getScannerStateFromCookie().state;
-                    setScannerStateInCookie({ state: newState });
-                    updateScannerButton(ScannerButton, newState);
-                });
-
-                updateScannerButton(ScannerButton, ScannerState.state);
-            }
-
-            return ScannerButton;
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            setupScannerButton();
-        });
-
-        // Setup blacklist button and state
-        function setupBlacklistButton() {
-            let blacklistButton = document.getElementById("blacklist-button");
-            const blacklistState = getBlacklistStateFromCookie();
-
-            if (!blacklistButton) {
-                blacklistButton = document.createElement("button");
-                blacklistButton.id = "blacklist-button";
-                blacklistButton.style.width = "100px";
-                blacklistButton.style.height = "20px";
-                blacklistButton.style.marginLeft = "5px";
-                blacklistButton.style.marginTop = "0px";
-                blacklistButton.style.display = "flex";
-                blacklistButton.style.alignItems = "center";
-                blacklistButton.style.justifyContent = "center";
-                blacklistButton.style.borderRadius = '0px';
-                blacklistButton.style.fontWeight = "bold";
-
-                if (ScannerButtonView) {
-                    blacklistButton.style.marginRight = "95px";
-                } else {
-                    blacklistButton.style.marginRight = "145px";
-                }
-
-                blacklistButton.addEventListener("click", () => {
-                    const newState = !getBlacklistStateFromCookie().state;
-                    setBlacklistStateInCookie({ state: newState });
-                    updateBlacklistState(newState);
-                });
-
-                updateBlacklistButton(blacklistButton, blacklistState.state);
-            }
-
-            return blacklistButton;
-        }
-
-        // Update hover effect based on file existence
-        function updateHoverEffect(button, fileExists) {
-            if (!button) {
-                console.error('Blacklist button does not exist.');
-                return;
-            }
-            if (!fileExists) {
-                button.style.pointerEvents = "none"; // Disable hover effect
-            } else {
-                button.style.pointerEvents = "auto"; // Enable hover effect
-            }
-        }
-
-        // Update blacklist button appearance based on state
-        function updateBlacklistButton(button, state, fileExists = true) {
-            if (!button) {
-                console.error('Blacklist button does not exist.');
-                return;
-            }
-            if (!state || !fileExists) {
-                button.textContent = "BLACKLIST";
-                button.classList.remove('bg-color-4');
-                button.classList.add('bg-color-2');
-            } else {
-                button.textContent = "BLACKLIST";
-                button.classList.remove('bg-color-2');
-                button.classList.add('bg-color-4');
-                button.style.pointerEvents = "auto"; // Enable hover effect
-            }
-        }
-
-        // Retrieve blacklist state from cookies
-        function getBlacklistStateFromCookie() {
-            const cookieValue = document.cookie.split('; ').find(row => row.startsWith('blacklist='));
-            return cookieValue ? JSON.parse(cookieValue.split('=')[1]) : { state: false };
-        }
-
-        // Set blacklist state in cookies
-        function setBlacklistStateInCookie(state) {
-            document.cookie = `blacklist=${JSON.stringify(state)}; path=/`;
-        }
-
-        // Update blacklist state and fetch blacklist if necessary
-        function updateBlacklistState(state) {
-            const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-            const port = window.location.port;
-            const host = document.location.hostname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
-
-            if (state) {
-                // Blacklist is ON, fetch the blacklist file
-                fetch(blacklistUrl, { method: 'HEAD' })
-                    .then(response => {
-                        if (response.ok) {
-                            return fetch(blacklistUrl).then(res => res.text());
-                        } else {
-                            throw new Error(`Blacklist file not found: ${response.status} ${response.statusText}`);
-                        }
-                    })
-                    .then(data => {
-                        blacklist = data.split('\n').map(frequency => frequency.trim()).filter(Boolean);
-                        console.log('Blacklist enabled:', blacklist);
-                        updateBlacklistButton(document.getElementById("blacklist-button"), state, true);
-                        updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
-                    })
-                    .catch(error => {
-                        console.error('Error checking blacklist:', error.message);
-                        blacklist = [];
-                        setBlacklistStateInCookie({ state: false });
-                        updateBlacklistButton(document.getElementById("blacklist-button"), false, false);
-                        updateHoverEffect(document.getElementById("blacklist-button"), false); // Update hover effect
-                    });
-            } else {
-                // Blacklist is OFF, clear the blacklist
-                blacklist = [];
-                console.log('Blacklist disabled');
-                updateBlacklistButton(document.getElementById("blacklist-button"), state, true);
-                updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
-            }
-        }
-
-        // Initial check of blacklist state
-        function checkBlacklist() {
-            const blacklistState = getBlacklistStateFromCookie().state;
-            updateBlacklistState(blacklistState); // Ensure blacklist state is correctly set on page load
-        }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            setupBlacklistButton();
-            checkBlacklist();
-        });
-
-        // Check if blacklist file exists
-        function checkBlacklistFileExistence() {
-            const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-            const port = window.location.port;
-            const host = document.location.hostname;
-            const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
-
-            fetch(blacklistUrl, { method: 'HEAD' })
-                .then(response => {
-                    if (response.ok) {
-                        updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
-                    } else {
-                        updateHoverEffect(document.getElementById("blacklist-button"), false); // Update hover effect
-                    }
-                })
-                .catch(error => {
-                    console.error('Error checking blacklist file existence:', error.message);
-                    updateHoverEffect(document.getElementById("blacklist-button"), false); // Update hover effect
-                });
-        }
-
-        // Initial check of blacklist state and file existence
-        function checkBlacklist() {
-            const blacklistState = getBlacklistStateFromCookie().state;
-            updateBlacklistState(blacklistState); // Ensure blacklist state is correctly set on page load
-            checkBlacklistFileExistence(); // Check blacklist file existence on page load
-        }
-
-        const LoggerButton = document.createElement('button');
-
-        function initializeLoggerButton() {
-            // console.log('initializeLoggerButton called'); // Debugging output
-
-            setupWebSocket();
-
-            LoggerButton.classList.add('hide-phone');
-            LoggerButton.id = 'Log-on-off';
-            LoggerButton.setAttribute('aria-label', 'LOGGER');
-            LoggerButton.setAttribute('data-tooltip', 'RDS-LOGGER on/off');
-            LoggerButton.style.borderRadius = '0px';
-            LoggerButton.style.width = '100px';
-            LoggerButton.style.position = 'relative';
-            LoggerButton.style.marginTop = '16px';
-            LoggerButton.style.right = '0px';
-            LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
-            LoggerButton.classList.add('bg-color-2');
-            LoggerButton.title = `Plugin Version: ${plugin_version}`;
-
-            const wrapperElement = document.querySelector('.tuner-info');
-            if (wrapperElement) {
-                const buttonWrapper = document.createElement('div');
-                buttonWrapper.classList.add('button-wrapper');
-                buttonWrapper.id = 'button-wrapper'; 
-                buttonWrapper.appendChild(LoggerButton);
-                wrapperElement.appendChild(buttonWrapper);
-                const emptyLine = document.createElement('br');
-                wrapperElement.appendChild(emptyLine);
-            }
-
-            LoggerButton.addEventListener('click', toggleLogger);
-            displaySignalCanvas();
-        }
-
-        // Initialize on window load
-        window.onload = function () {
-            initializeLoggerButton();
-            checkBlacklist();
-        };
-
-        async function checkFileExists(url) {
-            try {
-                const response = await fetch(url, { method: 'GET' });
-                return response.ok; // Returns true if the response status is 200-299
-            } catch (error) {
-                console.error('Error checking file existence:', error);
-                return false;
-            }
-        }
-
-        async function downloadDataCSV() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
-
-            const filterState = getFilterStateFromCookie().state;
-            const scannerState = getScannerStateFromCookie().state;
-
-            if (scannerState) {
-                const baseUrl = window.location.origin + '/logs/';
-                
-                // Parse the current date and calculate the previous date
-                const currentDateFormatted = new Date(currentDate);
-                const previousDateFormatted = new Date(currentDateFormatted);
-                previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
-                
-                // Format dates as strings in the format YYYY-MM-DD
-                const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0];
-                const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0];
-                
-                // Create file names based on the presence of filterState
-                const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.csv` : `SCANNER_${formattedCurrentDate}.csv`;
-                const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.csv` : `SCANNER_${formattedPreviousDate}.csv`;
-                
-                // Construct URLs for both current and previous date files
-                const fileUrlCurrent = baseUrl + fileNameCurrent;
-                const fileUrlPrevious = baseUrl + fileNamePrevious;
-                
-                // Check if the file for the current date exists
-                const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
-                if (fileExistsCurrent) {
-                    window.open(fileUrlCurrent, '_blank');
-                    return;
-                } else {
-                    // If the current date file doesn't exist, check for the previous date file
-                    const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
-                    if (fileExistsPrevious) {
-                        window.open(fileUrlPrevious, '_blank');
-                        return;
-                    } else {
-                        // If neither file exists, alert the user
-                        alert('File does not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
-                        return;
-                    }
-                }
-            }
-
-            // File does not exist, proceed to generate the CSV content
-            try {
-                // Initialize CSV data with headers and metadata
-                let allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\n`;
-                allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\n` : `RDS-LOGGER ${currentDate} ${currentTime}\n\n`;
-                
-                allData += UTCtime 
-                    ? 'date;time(utc);freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n' 
-                    : 'date;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n'; 
-                
-                // Determine which data array to use based on FilterState
-                const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
-
-                // Process each line and append it to allData
-                dataToUse.forEach(line => {
-                    // Directly replace delimiters without conditional formatting
-                    const formattedLine = line.replace(/\s*\|\s*/g, ";");
-                    allData += formattedLine + '\n';
-                });
-
-                // Create a Blob from the CSV data
-                const blob = new Blob([allData], { type: "text/csv" });
-
-                // Handle download for different browsers
-                if (window.navigator.msSaveOrOpenBlob) {
-                    window.navigator.msSaveOrOpenBlob(blob, filename);
-                } else {
-                    const link = document.createElement("a");
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = filename;
-                    document.body.appendChild(link); // Append to body to ensure compatibility
-                    link.click();
-                    document.body.removeChild(link); // Clean up
-                    window.URL.revokeObjectURL(link.href);
-                }
-            } catch (error) {
-                console.error('Error in downloadDataCSV:', error);
-            }
-        }
-
-        // Cache for API responses
-        const apiCache = {};
-
-        async function checkFileExists(url) {
-            try {
-                const response = await fetch(url, { method: 'GET' });
-                return response.ok; // Returns true if the response status is 200-299
-            } catch (error) {
-                console.error('Error checking file existence:', error);
-                return false;
-            }
-        }
-
-        async function downloadDataHTML() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.html`;
-
-            const filterState = getFilterStateFromCookie().state;
-            const scannerState = getScannerStateFromCookie().state;
-
-            if (scannerState) {
-                const baseUrl = window.location.origin + '/logs/';
-                const currentDateFormatted = new Date(currentDate);
-                const previousDateFormatted = new Date(currentDateFormatted);
-                previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
-
-                const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-                const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0]; // Format as YYYY-MM-DD
-
-                const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.html` : `SCANNER_${formattedCurrentDate}.html`;
-                const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.html` : `SCANNER_${formattedPreviousDate}.html`;
-                
-                const fileUrlCurrent = baseUrl + fileNameCurrent;
-                const fileUrlPrevious = baseUrl + fileNamePrevious;
-
-                const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
-
-                if (fileExistsCurrent) {
-                    window.open(fileUrlCurrent, '_blank');
-                    return;
-                } else {
-                    const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
-                    if (fileExistsPrevious) {
-                        window.open(fileUrlPrevious, '_blank');
-                        return;
-                    } else {
-                        alert('File not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
-                        return;
-                    }
-                }
-            }
-
-            let allData = htmlTemplate;
-
-            allData += `${ServerName}<br>${ServerDescription}<br>`;
-            allData += filterState 
-                ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}<br><br>` 
-                : `RDS-LOGGER ${currentDate} ${currentTime}<br><br>`; 
-
-            allData += UTCtime 
-                ? `<table border="1"><tr><th>DATE</th><th>TIME(UTC)</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>MAP</th><th>FMLIST</th></tr>` 
-                : `<table border="1"><tr><th>DATE</th><th>TIME</th><th>FREQ</th><th>PI</th><th>PS</th><th>NAME</th><th>CITY</th><th>ITU</th><th>P</th><th>ERP</th><th>DIST</th><th>AZ</th><th>ID</th><th>MAP</th><th>FMLIST</th></tr>`;
-
-            // Use filteredLogDataArray if filter is active, otherwise use logDataArray
-            const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
-
-            dataToUse.forEach(line => {
-                if (typeof line !== 'string') {
-                    console.error(`Invalid line found: ${line}`);
-                    return; // Skip this iteration if line is not a string
-                }
-
-                let [date, time, freq, pi, ps, name, city, itu, pol, erpTxt, distance, azimuth, id] = line.split('|').map(value => value.trim());
-
-                let link1 = id ? `<a href="https://maps.fmdx.org/#qth=${LAT},${LON}&id=${id}&findId=*" target="_blank">FMDX</a>` : '';
-                let link2 = id && id > 0 && FMLIST_OM_ID !== '' ? `<a href="https://www.fmlist.org/fi_inslog.php?lfd=${id}&qrb=${distance}&qtf=${azimuth}&country=${itu}&omid=${FMLIST_OM_ID}" target="_blank">FMLIST</a>` : '';
-
-                allData += `<tr><td>${date}</td><td>${time}</td><td>${freq}</td><td>${pi}</td><td>${ps}</td><td>${name}</td><td>${city}</td><td>${itu}</td><td>${pol}</td><td>${erpTxt}</td><td>${distance}</td><td>${azimuth}</td><td>${id}</td><td>${link1}</td><td>${link2}</td></tr>\n`;
-            });
-
-            allData += `</table></pre><pre></body></html>`;
-
-            const blob = new Blob([allData], { type: "text/html" });
-
-            if (window.navigator.msSaveOrOpenBlob) {
-                window.navigator.msSaveOrOpenBlob(blob, filename);
-            } else {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement("a");
-                link.href = url;
-                link.target = "_blank";
-                link.click();
-                window.URL.revokeObjectURL(url);
-            }
-        }
-
-        function getCurrentUTC() {
-            // Get the current time in UTC
-            const now = new Date();
-            
-            // Extract the UTC hours, minutes, and seconds
-            const hours = String(now.getUTCHours()).padStart(2, '0');
-            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
-            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
-            
-            // Format the time in HH:MM:SS format
-            const utcTime = `${hours}:${minutes}:${seconds}`;
-
-            return utcTime;
-        }
-
-    })();
-})();
+// Load config on startup
+loadConfig();
 
 const htmlTemplate = `
 <!DOCTYPE html>
