@@ -402,7 +402,7 @@ function loadConfig() {
 
                         // Check if FilterState is true or false
                         let stationidArray = [];
-
+						
                         if (FilteredlogDataArray.length > 0) {
                             for (let i = 0; i < FilteredlogDataArray.length; i++) {
                                 const stationid = extractStationId(FilteredlogDataArray[i]);
@@ -410,7 +410,16 @@ function loadConfig() {
                                     stationidArray.push(stationid);
                                 }
                             }
-                        }
+                        } 
+						
+						if (logDataArray.length > 0) {
+                            for (let i = 0; i < logDataArray.length; i++) {
+                                const stationid = extractStationId(logDataArray[i]);
+                                if (stationid !== null) {
+                                    stationidArray.push(stationid);
+                                }
+                            }
+                        } 					
 
                         // Remove duplicate stationids and create a comma-separated list
                         const uniqueStationIds = [...new Set(stationidArray)].join(',');
