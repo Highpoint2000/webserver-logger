@@ -463,7 +463,7 @@ function loadConfig() {
                                 const data = previousDataByFrequency[currentFrequency];
                                 const station = data ? data.station : '';
                                 stationid = data ? data.stationid : '';
-
+								
                                 if (station !== '' && FMLIST_OM_ID && !isInBlacklist(currentFrequency, blacklist)) {
                                     FMLISTButton.classList.remove('bg-color-2');
                                     FMLISTButton.classList.add('bg-color-4');
@@ -613,24 +613,26 @@ function loadConfig() {
                                 timeFilter = formatTime(now);
                             }
                         }
+						
+						if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
 
-                        const outputText = station
-                            ? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
-                            : `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
+							const outputText = station
+								? `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
+								: `${date}  ${time}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
-                        const outputTextFilter = station
-                            ? `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
-                            : `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
+							const outputTextFilter = station
+								? `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}  ${station}  ${city}  ${itu}  ${pol}  ${erpTxt}  ${distance}  ${azimuth}`
+								: `${dateFilter}  ${timeFilter}  ${currentFrequencyWithSpaces}  ${picode}  ${ps}`;
 
-                        let outputArray = station
-                            ? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
-                            : `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
+							let outputArray = station
+								? `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
+								: `${date} | ${time} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
 
-                        let outputArrayFilter = station
-                            ? `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
-                            : `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
-
-                        if (!blacklist.length || !isInBlacklist(currentFrequency, blacklist)) {
+							let outputArrayFilter = station
+								? `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} | ${station} | ${city} | ${itu} | ${pol} | ${erpTxt} | ${distance} | ${azimuth} | ${stationid}`
+								: `${dateFilter} | ${timeFilter} | ${currentFrequencyWithSpaces} | ${picode} | ${ps} |                           |                       |     |   |        |      |    `;
+							
+                       
                             const newOutputDiv = document.createElement("div");
                             newOutputDiv.style.whiteSpace = "pre-wrap";
                             newOutputDiv.style.fontSize = "16px";
@@ -841,33 +843,6 @@ function loadConfig() {
                     }
 
                     let blacklist = [];
-
-                    // Check and initialize blacklist
-                    function checkBlacklist() {
-                        const blacklistProtocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
-                        const port = window.location.port;
-                        const host = document.location.hostname;
-                        const blacklistUrl = `${blacklistProtocol}//${host}:${port}/logger/blacklist.txt`;
-
-                        fetch(blacklistUrl)
-                            .then(response => {
-                                if (response.ok) {
-                                    return response.text();
-                                } else {
-                                    throw new Error(`Error fetching blacklist: ${response.status} ${response.statusText}`);
-                                }
-                            })
-                            .then(data => {
-                                blacklist = data.split('\n').map(frequency => frequency.trim()).filter(Boolean);
-                                console.log('Blacklist initialized:', blacklist);
-                                setupBlacklistButton();
-                            })
-                            .catch(error => {
-                                console.error('Error checking blacklist:', error.message);
-                                blacklist = [];
-                                setupBlacklistButton();
-                            });
-                    }
 
                     // Retrieve Filter state from cookies
                     function getFilterStateFromCookie() {
@@ -1130,15 +1105,8 @@ function loadConfig() {
                         }
                     }
 
-                    // Initial check of blacklist state
-                    function checkBlacklist() {
-                        const blacklistState = getBlacklistStateFromCookie().state;
-                        updateBlacklistState(blacklistState); // Ensure blacklist state is correctly set on page load
-                    }
-
                     document.addEventListener("DOMContentLoaded", () => {
                         setupBlacklistButton();
-                        checkBlacklist();
                     });
 
                     // Check if blacklist file exists
