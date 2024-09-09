@@ -22,6 +22,10 @@ let UTCtime = true;              // Set to 'true' to log using UTC time
 
 const plugin_version = 'V1.6a BETA'; // Plugin version
 
+function delay(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
     fetch('/js/plugins/Logger/configPlugin.json') // Updated path to /js/plugins/Logger
@@ -47,7 +51,11 @@ function loadConfig() {
         .catch(error => {
             console.log("RDS-Logger failed to load configPlugin.json:", error);
         });
-        setTimeout(loadRDSLogger, 500);
+		
+		delay(500).then(() => {
+			loadRDSLogger();
+		});
+
 }
 
 // Load config on startup
@@ -1384,12 +1392,14 @@ function loadRDSLogger() {
 
             return utcTime;
         }
-		
+			
 		// Initialize on start
 		initializeLoggerButton();
 		setupBlacklistButton();
 		checkBlacklist();
-		setTimeout(setupWebSocket, 250);
+		delay(1000).then(() => {
+			setupWebSocket();
+		});
 
     })();
 }
