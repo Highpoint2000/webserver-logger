@@ -7,7 +7,7 @@ This plugin provides logging functions for the FM-DX web server.
 ![image](https://github.com/user-attachments/assets/672fef04-f4d8-48dc-88b1-7c4b1f2241ad)
 
 
-## Version 1.6a BETA (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
+## Version 1.6a (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
 - Plugin configuration can be loaded from configPlugin.json file (only Windows systems!)
 - FMDX button became MAPALL and now calls up the map with all logs
