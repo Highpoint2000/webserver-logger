@@ -22,13 +22,9 @@ let UTCtime = true;              // Set to 'true' to log using UTC time
 
 const plugin_version = 'V1.6a BETA'; // Plugin version
 
-function delay(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
-    fetch('/js/plugins/Logger/configPlugin.json') // Updated path to /js/plugins/Logger
+    return fetch('/js/plugins/Logger/configPlugin.json') // Updated path to /js/plugins/Logger
         .then(response => {
             if (!response.ok) {
                 console.warn('Config file not found, using default values.');
@@ -51,15 +47,17 @@ function loadConfig() {
         .catch(error => {
             console.log("RDS-Logger failed to load configPlugin.json:", error);
         });
-		
-		delay(500).then(() => {
-			loadRDSLogger();
-		});
-
 }
 
-// Load config on startup
-loadConfig();
+// Load config on startup and then load RDSLogger
+loadConfig().then(() => {
+    loadRDSLogger();
+});
+
+
+function delay(ms) {
+	return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function loadRDSLogger() {
 	
@@ -1107,7 +1105,7 @@ function loadRDSLogger() {
                         updateHoverEffect(document.getElementById("blacklist-button"), true); // Update hover effect
                     })
                     .catch(error => {
-                        console.error('Error checking blacklist:', error.message);
+                        // console.error('Error checking blacklist:', error.message);
                         blacklist = [];
                         setBlacklistStateInCookie({ state: false });
                         updateBlacklistButton(document.getElementById("blacklist-button"), false, false);
