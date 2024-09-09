@@ -47,7 +47,7 @@ function loadConfig() {
         .catch(error => {
             console.log("RDS-Logger failed to load configPlugin.json:", error);
         });
-        setTimeout(loadRDSLogger, 200);
+        setTimeout(loadRDSLogger, 500);
 }
 
 // Load config on startup
@@ -1389,7 +1389,7 @@ function loadRDSLogger() {
 		initializeLoggerButton();
 		setupBlacklistButton();
 		checkBlacklist();
-		setTimeout(setupWebSocket, 100);
+		setTimeout(setupWebSocket, 250);
 
     })();
 }
