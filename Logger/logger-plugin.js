@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a BETA)  ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a)       ///
 ///                                                      ///
 ///  by Highpoint                last update: 09.09.24   ///
 ///                                                      ///
@@ -20,7 +20,7 @@ let UTCtime = true;              // Set to 'true' to log using UTC time
 
 (() => {
 
-const plugin_version = 'V1.6a BETA'; // Plugin version
+const plugin_version = 'V1.6a'; // Plugin version
 
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
