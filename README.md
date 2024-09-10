@@ -18,8 +18,17 @@ This plugin provides logging functions for the FM-DX web server.
 
 1. [Download](https://github.com/Highpoint2000/webserver-logger/releases) the last repository as a zip
 2. Unpack the Logger.js and the Logger folder with the logger-plugin.js into the web server plugins folder (..fm-dx-webserver-main\plugins) [image](https://github.com/Highpoint2000/webserver-logger/assets/168109804/98b38e5d-e58c-4192-b69c-739b608cf118)
-4. Restart the server
-5. Activate the plugin it in the settings
+3. Restart the server
+4. Activate the plugin it in the settings
+
+## Configuration options:
+
+The following variables can be changed in the header of the script:
+
+FMLIST_OM_ID = '';           // If you want to use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
+Screen = '';                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
+ScannerButtonView = false;   // Set to 'true' to display a button for downloading scanner file links
+UTCtime = true;              // Set to 'true' to log using UTC time
 
 ## Notes: 
 
