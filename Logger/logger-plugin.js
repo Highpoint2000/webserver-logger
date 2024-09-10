@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a)		 ///
 ///                                                      ///
-///  by Highpoint                last update: 09.09.24   ///
+///  by Highpoint                last update: 10.09.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -1645,6 +1645,12 @@ const htmlTemplate = `
         const filter = input.value.toLowerCase();
         const table = document.querySelector("table");
         const tr = table.getElementsByTagName("tr");
+		
+		// Get the PI codes from the new input field
+        const piCodesInput = document.getElementById("piCodesInput").value;
+		piCodesArray = piCodesInput.split(',')
+			.map(code => code && typeof code === 'string' ? code.trim().split('?').join('') : '') // Remove trailing question marks
+			.filter(code => code); // Trim and filter empty codes
 
         // Checkbox filter
         const filter150 = document.getElementById("filter150").checked;
@@ -1687,13 +1693,13 @@ const htmlTemplate = `
                 }
             }
 
-            // Filter based on distance
-            if (display && distanceFilter !== null) {
-                let distValue = parseFloat(td[10].textContent) || 0; // Assume 'DIST' is in the 11th column (index 10)
-                if (distValue <= distanceFilter) {
-                    display = false; // Hide row if distance is less than or equal to the filter value
-                }
-            }
+			// Filter based on PI codes
+			if (display && piCodesArray.length > 0) {
+				const piCodeValue = td[3].textContent.trim().split('?').join(''); // Remove all question marks
+				if (piCodesArray.includes(piCodeValue)) {
+					display = false; // Hide the row if the PI code is in the exclusion list
+				}
+			}	
 
             // Show or hide the row based on the filters
             tr[i].style.display = display ? "" : "none";
@@ -1786,7 +1792,9 @@ const htmlTemplate = `
                 '<input type="checkbox" id="filterFreeDistance" onchange="filterTable()"> Custom:' +
             '</label>' +
             '<input type="number" id="freeDistanceInput" placeholder="" min="0" oninput="filterTable()">' +
-            '<span class="distance-label">km</span>';
+            '<span class="distance-label">km</span>' + 
+			'<label for="piCodesInput" style="margin-top: 3px; display: block;">Exclude PI Codes (comma separated):</label>' +
+			'<input type="text" id="piCodesInput" placeholder="e.g. 6201,6202,6203" oninput="filterTable()">';
 
         searchContainer.appendChild(filterContainer);
         controlsContainer.appendChild(searchContainer);
