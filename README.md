@@ -12,6 +12,7 @@ This plugin provides logging functions for the FM-DX web server.
 - Plugin configuration can be loaded from configPlugin.json file (only Windows systems!)
 - FMDX button became MAPALL and now calls up the map with all logs
 - test was removed from the code
+- Add PI-Code filter to the html log file
 
 ## Installation notes:
 
