@@ -13,6 +13,7 @@ This plugin provides logging functions for the FM-DX web server.
 - FMDX button became MAPALL and now calls up the map with all logs
 - test was removed from the code
 - Add PI-Code filter to the html log file
+- HTML Language Tag set to English
 
 ## Installation notes:
 
