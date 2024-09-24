@@ -2,7 +2,7 @@
 ///                                                      ///
 ///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a)		 ///
 ///                                                      ///
-///  by Highpoint                last update: 10.09.24   ///
+///  by Highpoint                last update: 24.09.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -1405,7 +1405,7 @@ function loadRDSLogger() {
 			
 const htmlTemplate = `
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
