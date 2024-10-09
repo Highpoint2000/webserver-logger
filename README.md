@@ -26,10 +26,11 @@ This plugin provides logging functions for the FM-DX web server.
 
 The following variables can be changed in the header of the script:
 
-- FMLIST_OM_ID = '';           // If you want to use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
-- Screen = '';                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
-- ScannerButtonView = false;   // Set to 'true' to display a button for downloading scanner file links
-- UTCtime = true;              // Set to 'true' to log using UTC time
+
+    FMLIST_OM_ID = '';           // If you want to use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
+    Screen = '';                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
+    ScannerButtonView = false;   // Set to 'true' to display a button for downloading scanner file links
+    UTCtime = true;              // Set to 'true' to log using UTC time
 
 ## Notes: 
 
