@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6a)		 ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6b)		 ///
 ///                                                      ///
-///  by Highpoint                last update: 24.09.24   ///
+///  by Highpoint                last update: 04.11.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -10,17 +10,16 @@
 
 // This plugin works only from web server version 1.2.6!!!
 
-// Default values
-let FMLIST_OM_ID = '';           // If you want to use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
-let Screen = '';                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
-let ScannerButtonView = false;   // Set to 'true' to display a button for downloading scanner file links
-let UTCtime = true;              // Set to 'true' to log using UTC time
-
-/////////////////////////////////////////////////////////////////////////////////////
-
 (() => {
+	
+// Default values - set your personal settings in the configPlugin.json!
 
-const plugin_version = 'V1.6a'; // Plugin version
+let FMLIST_OM_ID = '';           
+let Screen = '';                 
+let ScannerButtonView = false;   
+let UTCtime = true;              
+
+const plugin_version = 'V1.6b'; // Plugin version
 
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
@@ -707,8 +706,10 @@ function loadRDSLogger() {
                 Savestation = station;
                 Savestationid = stationid;
                 Saveps = ps;
-                dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
-            }
+                const { scrollTop, scrollHeight, clientHeight } = dataCanvas; 
+				userIsAtBottom = scrollTop + clientHeight >= scrollHeight - 20; // Adjusted threshold
+				if (userIsAtBottom) dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
+			}
         }
 
         // Toggle logger state and update UI accordingly
