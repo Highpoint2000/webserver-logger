@@ -7,7 +7,7 @@ This plugin provides logging functions for the FM-DX web server.
 ![image](https://github.com/user-attachments/assets/672fef04-f4d8-48dc-88b1-7c4b1f2241ad)
 
 
-## Version 1.6b (only works from version 1.2.6!)
+## Version 1.6b (only works from webserver version 1.2.6!)
 
 - Improved scrolling behavior (thanks to AmateurAudioDude!)
 
