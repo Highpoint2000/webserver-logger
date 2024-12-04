@@ -29,7 +29,7 @@ The following variables can be changed in the configPlugin.json:
     Screen = '',                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
     ScannerButtonView = false,   // Set to 'true' to display a button for downloading scanner file links
     UTCtime = true,              // Set to 'true' to log using UTC time
-	updateInfo = true			// Enable or disable version check	
+    updateInfo = true		 // Enable or disable version check	
 
 ## Notes: 
 
