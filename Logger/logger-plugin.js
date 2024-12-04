@@ -19,7 +19,7 @@ let Screen = '';
 let ScannerButtonView = false;   
 let UTCtime = true;              
 
-const plugin_version = 'V1.6b'; // Plugin version
+const plugin_version = '1.6b'; // Plugin version
 
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
