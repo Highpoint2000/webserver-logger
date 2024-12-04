@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6c)		 ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6c)       ///
 ///                                                      ///
 ///  by Highpoint                last update: 04.12.24   ///
 ///                                                      ///
