@@ -20,12 +20,10 @@ let ScannerButtonView = false;
 let UTCtime = true;   
 let updateInfo = true;            
 
-const plugin_version = 'V1.6c'; // Plugin version
+const plugin_version = '1.6c'; // Plugin version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/webserver-logger/';
 const plugin_JSfile = 'main/Logger/logger-plugin.js'
 const plugin_name = 'RDS Logger';
-=======
-const plugin_version = '1.6b'; // Plugin version
 
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
@@ -76,8 +74,8 @@ function shouldShowNotification() {
     return true;
   }
 
-  // Function to check plugin version
-  function checkPluginVersion() {
+// Function to check plugin version
+function checkPluginVersion() {
     // Fetch and evaluate the plugin script
     fetch(`${plugin_path}${plugin_JSfile}`)
       .then(response => response.text())
@@ -118,7 +116,6 @@ function shouldShowNotification() {
 
 			return 0; // Versions are equal
 		}
-
 
         // Check version and show notification if needed
         const comparisonResult = compareVersions(plugin_version, externalPluginVersion);
