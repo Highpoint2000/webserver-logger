@@ -8,9 +8,10 @@ This plugin provides logging functions for the FM-DX web server.
 ![image](https://github.com/user-attachments/assets/672fef04-f4d8-48dc-88b1-7c4b1f2241ad)
 
 
-## Version 1.6b (only works from webserver version 1.2.6!)
+## Version 1.6c (only works from webserver version 1.2.6!)
 
-- Improved scrolling behavior (thanks to AmateurAudioDude!)
+- Adjustments for the Spectrum Graph plugin
+- Daily update check for admin
 
 ## Installation notes:
 
@@ -21,13 +22,14 @@ This plugin provides logging functions for the FM-DX web server.
 
 ## Configuration options:
 
-The following variables can be changed in the header of the script:
+The following variables can be changed in the configPlugin.json:
 
 
-    FMLIST_OM_ID = '';           // If you want to use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
-    Screen = '';                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
-    ScannerButtonView = false;   // Set to 'true' to display a button for downloading scanner file links
-    UTCtime = true;              // Set to 'true' to log using UTC time
+    FMLIST_OM_ID = '',           // If you want to use the logbook function, enter your OM ID here, e.g., FMLIST_OM_ID = '1234'
+    Screen = '',                 // Set to 'small' or 'ultrasmall' if unwanted horizontal scroll bars appear
+    ScannerButtonView = false,   // Set to 'true' to display a button for downloading scanner file links
+    UTCtime = true,              // Set to 'true' to log using UTC time
+	updateInfo = true			// Enable or disable version check	
 
 ## Notes: 
 
@@ -41,6 +43,10 @@ Users who also use the Extended Description plugin should download the modified 
 
 
 ## History: 
+
+### Version 1.6b (only works from webserver version 1.2.6!)
+
+- Improved scrolling behavior (thanks to AmateurAudioDude!)
 
 ### Version 1.6a (only works from version 1.2.6 - older versions must take the plugin version 1.3f or 1.3i !!!)
 
