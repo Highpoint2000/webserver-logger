@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6b)		 ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6c)		 ///
 ///                                                      ///
-///  by Highpoint                last update: 04.11.24   ///
+///  by Highpoint                last update: 04.12.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -17,9 +17,13 @@
 let FMLIST_OM_ID = '';           
 let Screen = '';                 
 let ScannerButtonView = false;   
-let UTCtime = true;              
+let UTCtime = true;   
+let updateInfo = true;            
 
-const plugin_version = 'V1.6b'; // Plugin version
+const plugin_version = 'V1.6c'; // Plugin version
+const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/webserver-logger/';
+const plugin_JSfile = 'main/Logger/logger-plugin.js'
+const plugin_name = 'RDS Logger';
 
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
 function loadConfig() {
@@ -38,6 +42,7 @@ function loadConfig() {
                 Screen = config.Screen || Screen;
                 ScannerButtonView = (typeof config.ScannerButtonView === 'boolean') ? config.ScannerButtonView : ScannerButtonView;
                 UTCtime = (typeof config.UTCtime === 'boolean') ? config.UTCtime : UTCtime;
+				updateInfo = (typeof config.updateInfo === 'boolean') ? config.updateInfo : updateInfo;
                 console.log("RDS-Logger successfully loaded config from configPlugin.json.");
             } else {
                 console.log("Using default configuration values.");
@@ -53,6 +58,86 @@ loadConfig().then(() => {
     loadRDSLogger();
 });
 
+let isTuneAuthenticated;
+const PluginUpdateKey = `${plugin_name}_lastUpdateNotification`; // Unique key for localStorage
+
+// Function to check if the notification was shown today
+function shouldShowNotification() {
+    const lastNotificationDate = localStorage.getItem(PluginUpdateKey);
+    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+
+    if (lastNotificationDate === today) {
+      return false; // Notification already shown today
+    }
+    // Update the date in localStorage to today
+    localStorage.setItem(PluginUpdateKey, today);
+    return true;
+  }
+
+  // Function to check plugin version
+  function checkPluginVersion() {
+    // Fetch and evaluate the plugin script
+    fetch(`${plugin_path}${plugin_JSfile}`)
+      .then(response => response.text())
+      .then(script => {
+        // Search for plugin_version in the external script
+        const pluginVersionMatch = script.match(/const plugin_version = '([\d.]+[a-z]*)?';/);
+        if (!pluginVersionMatch) {
+          console.error(`${plugin_name}: Plugin version could not be found`);
+          return;
+        }
+
+        const externalPluginVersion = pluginVersionMatch[1];
+
+        // Function to compare versions
+		function compareVersions(local, remote) {
+			const parseVersion = (version) =>
+				version.split(/(\d+|[a-z]+)/i).filter(Boolean).map((part) => (isNaN(part) ? part : parseInt(part, 10)));
+
+			const localParts = parseVersion(local);
+			const remoteParts = parseVersion(remote);
+
+			for (let i = 0; i < Math.max(localParts.length, remoteParts.length); i++) {
+				const localPart = localParts[i] || 0; // Default to 0 if part is missing
+				const remotePart = remoteParts[i] || 0;
+
+				if (typeof localPart === 'number' && typeof remotePart === 'number') {
+					if (localPart > remotePart) return 1;
+					if (localPart < remotePart) return -1;
+				} else if (typeof localPart === 'string' && typeof remotePart === 'string') {
+					// Lexicographical comparison for strings
+					if (localPart > remotePart) return 1;
+					if (localPart < remotePart) return -1;
+				} else {
+					// Numeric parts are "less than" string parts (e.g., `3.5` < `3.5a`)
+					return typeof localPart === 'number' ? -1 : 1;
+				}
+			}
+
+			return 0; // Versions are equal
+		}
+
+
+        // Check version and show notification if needed
+        const comparisonResult = compareVersions(plugin_version, externalPluginVersion);
+        if (comparisonResult === 1) {
+          // Local version is newer than the external version
+          console.log(`${plugin_name}: The local version is newer than the plugin version.`);
+        } else if (comparisonResult === -1) {
+          // External version is newer and notification should be shown
+          if (shouldShowNotification()) {
+            console.log(`${plugin_name}: Plugin update available: ${plugin_version} -> ${externalPluginVersion}`);
+			sendToast('warning important', `${plugin_name}`, `Update available:<br>${plugin_version} -> ${externalPluginVersion}`, false, false);
+            }
+        } else {
+          // Versions are the same
+          console.log(`${plugin_name}: The local version matches the plugin version.`);
+        }
+      })
+      .catch(error => {
+        console.error(`${plugin_name}: Error fetching the plugin script:`, error);
+      });
+}
 
 function delay(ms) {
 	return new Promise(resolve => setTimeout(resolve, ms));
@@ -714,10 +799,11 @@ function loadRDSLogger() {
 
         // Toggle logger state and update UI accordingly
         function toggleLogger() {
+			if (!document.querySelector("#signal-canvas")?.offsetParent && !isLoggerOn) return;
             const LoggerButton = document.getElementById('Log-on-off');
             const ButtonsContainer = document.querySelector('.download-buttons-container');
             const antennaImage = document.querySelector('#antenna'); // Ensure ID 'antenna' is correct
-            isLoggerOn = !isLoggerOn;
+            isLoggerOn = !isLoggerOn;		
 
             if (isLoggerOn) {
                 // Update button appearance
@@ -1402,6 +1488,27 @@ function loadRDSLogger() {
 
     })();
 }
+
+ // Function to check if the user is logged in as an administrator
+    function checkAdminMode() {
+        const bodyText = document.body.textContent || document.body.innerText;
+        const AdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as an adminstrator.");
+ 
+        if (AdminLoggedIn) {
+            console.log(`Admin mode found`);
+            isTuneAuthenticated = true;
+        } 
+    }
+	    checkAdminMode(); // Check admin mode
+
+  	setTimeout(() => {
+
+	// Execute the plugin version check if updateInfo is true and admin ist logged on
+	if (updateInfo && isTuneAuthenticated) {
+		checkPluginVersion();
+		}
+	}, 200);
+
 })();
 			
 const htmlTemplate = `
@@ -1854,4 +1961,3 @@ const htmlTemplate = `
 </body>
 </html>
 `;
-
