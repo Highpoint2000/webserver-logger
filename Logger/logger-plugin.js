@@ -20,7 +20,7 @@ let ScannerButtonView = false;
 let UTCtime = true;   
 let updateInfo = true;            
 
-const plugin_version = '1.6c'; // Plugin version
+const plugin_version = '1.6d'; // Plugin version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/webserver-logger/';
 const plugin_JSfile = 'main/Logger/logger-plugin.js'
 const plugin_name = 'RDS Logger';
