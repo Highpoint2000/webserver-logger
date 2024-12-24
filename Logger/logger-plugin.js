@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6c)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6d)		 ///
 ///                                                      ///
-///  by Highpoint                last update: 04.12.24   ///
+///  by Highpoint                last update: 24.12.24   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -227,9 +227,14 @@ function loadRDSLogger() {
             const txInfo = eventData.txInfo;
 
             let ps = eventData.ps;
-            if ((eventData.ps_errors !== "0,0,0,0,0,0,0,1") && (eventData.ps_errors !== "0,0,0,0,0,0,0,0")) {
-                ps += "?";
-            }
+		
+			if (eventData.ps_errors && typeof eventData.ps_errors === 'string' && /\b(5|6|7|8|9|10)\b/.test(eventData.ps_errors)) {
+				ps += "?";
+			}
+	
+			if (ps === "") {
+				ps = "?";
+			}
 
             previousDataByFrequency[frequency] = {
                 picode: eventData.pi,
