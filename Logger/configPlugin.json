@@ -1,7 +1,7 @@
 {
-    "FMLIST_OM_ID": "",
+    "FMLIST_OM_ID": "8032",
     "Screen": "",
-    "ScannerButtonView": false,
+    "ScannerButtonView": true,
     "UTCtime": true,
 	"updateInfo": true
 }
