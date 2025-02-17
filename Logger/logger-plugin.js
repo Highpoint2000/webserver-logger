@@ -1,14 +1,14 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.6d)		 ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.7)       ///
 ///                                                      ///
-///  by Highpoint                last update: 24.12.24   ///
+///  by Highpoint                last update: 17.02.25   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
 ////////////////////////////////////////////////////////////
 
-// This plugin works only from web server version 1.2.6!!!
+///  This plugin only works from web server version 1.3.5 !!!
 
 (() => {
 	
@@ -20,9 +20,9 @@ let ScannerButtonView = false;
 let UTCtime = true;   
 let updateInfo = true;            
 
-const plugin_version = '1.6d'; // Plugin version
+const plugin_version = '1.7'; // Plugin version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/webserver-logger/';
-const plugin_JSfile = 'main/Logger/logger-plugin.js'
+const plugin_JSfile = 'main/Logger/logger-plugin.js';
 const plugin_name = 'RDS Logger';
 
 // Function to load configPlugin.json from /js/plugins/Logger directory (WINDOWS SYSTEMS ONLY)
@@ -43,13 +43,13 @@ function loadConfig() {
                 ScannerButtonView = (typeof config.ScannerButtonView === 'boolean') ? config.ScannerButtonView : ScannerButtonView;
                 UTCtime = (typeof config.UTCtime === 'boolean') ? config.UTCtime : UTCtime;
 				updateInfo = (typeof config.updateInfo === 'boolean') ? config.updateInfo : updateInfo;
-                console.log("RDS-Logger successfully loaded config from configPlugin.json.");
+                console.log("RDS Logger successfully loaded config from configPlugin.json.");
             } else {
                 console.log("Using default configuration values.");
             }
         })
         .catch(error => {
-            console.log("RDS-Logger failed to load configPlugin.json:", error);
+            console.log("RDS Logger failed to load configPlugin.json:", error);
         });
 }
 
@@ -72,7 +72,7 @@ function shouldShowNotification() {
     // Update the date in localStorage to today
     localStorage.setItem(PluginUpdateKey, today);
     return true;
-  }
+}
 
 // Function to check plugin version
 function checkPluginVersion() {
@@ -221,6 +221,7 @@ function loadRDSLogger() {
         // Handle incoming WebSocket messages
         function handleWebSocketMessage(event) {
             const eventData = JSON.parse(event.data);
+			//console.log(eventData);
             const frequency = eventData.freq;
 
             // Process data if frequency is not in the blacklist
@@ -275,9 +276,9 @@ function loadRDSLogger() {
         // Create the logging canvas and append it to the parent container
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
-        loggingCanvas.style.height = "95%";
+        loggingCanvas.style.height = "80%";
         loggingCanvas.style.width = "97%";
-        loggingCanvas.style.marginTop = "0px";
+        loggingCanvas.style.marginTop = "5px";
         loggingCanvas.style.marginRight = "0px";
         loggingCanvas.style.marginLeft = "20px";
         loggingCanvas.style.display = 'none';
@@ -800,59 +801,55 @@ function loadRDSLogger() {
 				if (userIsAtBottom) dataCanvas.scrollTop = dataCanvas.scrollHeight - dataCanvas.clientHeight;
 			}
         }
+		
+		// CSS rule to set the background for the active button (like on mouseover)
+		const styleEl = document.createElement('style');
+		styleEl.textContent = `
+		/* This defines the background for the active button (with .active) */
+		#Log-on-off.active {
+			background-color: var(--color-2) !important;
+			filter: brightness(120%);
+		}
+		`;
+		document.head.appendChild(styleEl);
 
-        // Toggle logger state and update UI accordingly
-        function toggleLogger() {
-			if (!document.querySelector("#signal-canvas")?.offsetParent && !isLoggerOn) return;
-            const LoggerButton = document.getElementById('Log-on-off');
-            const ButtonsContainer = document.querySelector('.download-buttons-container');
-            const antennaImage = document.querySelector('#antenna'); // Ensure ID 'antenna' is correct
-            isLoggerOn = !isLoggerOn;		
-
-            if (isLoggerOn) {
-                // Update button appearance
-                LoggerButton.classList.remove('bg-color-2');
-                LoggerButton.classList.add('bg-color-4');
-
-                // Perform actions when logger is on
-                displaySignalOutput();
-
-                // Set initial height with delay
-                setTimeout(adjustDataCanvasHeight, 100);
-                // Adjust height dynamically on window resize
-                window.addEventListener('resize', adjustDataCanvasHeight);
-
-                // Show download buttons or create them if not already present
-                if (ButtonsContainer) {
-                    ButtonsContainer.style.display = 'flex';
-                } else {
-                    createDownloadButtons(); // Function to create download buttons if not already created
-                }
-
-                // Hide antenna image
-                if (antennaImage) {
-                    antennaImage.style.visibility = 'hidden';
-                }
-
-            } else {
-                // Update button appearance
-                LoggerButton.classList.remove('bg-color-4');
-                LoggerButton.classList.add('bg-color-2');
-
-                // Perform actions when logger is off
-                displaySignalCanvas();
-
-                // Hide download buttons
-                if (ButtonsContainer) {
-                    ButtonsContainer.style.display = 'none';
-                }
-
-                // Show antenna image
-                if (antennaImage) {
-                    antennaImage.style.visibility = 'visible';
-                }
-            }
-        }
+		function toggleLogger() {
+				if (!document.querySelector("#signal-canvas")?.offsetParent && !isLoggerOn) return;
+				const LoggerButton = document.getElementById('Log-on-off');
+				const ButtonsContainer = document.querySelector('.download-buttons-container');
+				const antennaImage = document.querySelector('#antenna'); // Ensure the ID is correct
+				isLoggerOn = !isLoggerOn;
+		
+				if (isLoggerOn) {
+					// When activated: add the "active" class that sets the desired background
+					LoggerButton.classList.add('active');
+				
+					// Actions when the logger is activated
+					displaySignalOutput();
+					setTimeout(adjustDataCanvasHeight, 100);
+					window.addEventListener('resize', adjustDataCanvasHeight);
+					if (ButtonsContainer) {
+							ButtonsContainer.style.display = 'flex';
+					} else {
+							createDownloadButtons();
+					}
+					if (antennaImage) {
+							antennaImage.style.visibility = 'hidden';
+					}
+				} else {
+					// When deactivated: remove the "active" class
+					LoggerButton.classList.remove('active');
+				
+					// Actions when the logger is deactivated
+					displaySignalCanvas();
+					if (ButtonsContainer) {
+							ButtonsContainer.style.display = 'none';
+					}
+					if (antennaImage) {
+							antennaImage.style.visibility = 'visible';
+					}
+				}
+		}
 
         // Create CSV download button
         function createDownloadButtonCSV() {
@@ -1240,37 +1237,56 @@ function loadRDSLogger() {
         }
 
         const LoggerButton = document.createElement('button');
+		
+		// Create logger button
+		function createButton(buttonId) {
+			(function waitForFunction() {
+				const maxWaitTime = 10000;
+				let functionFound = false;
 
-        function initializeLoggerButton() {
+				const observer = new MutationObserver((mutationsList, observer) => {
+					if (typeof addIconToPluginPanel === 'function') {
+						observer.disconnect();
+						addIconToPluginPanel(buttonId, "RDS Logger", "solid", "table", `Plugin Version: ${plugin_version}`);
+						functionFound = true;
 
-            LoggerButton.classList.add('hide-phone');
-            LoggerButton.id = 'Log-on-off';
-            LoggerButton.setAttribute('aria-label', 'LOGGER');
-            LoggerButton.setAttribute('data-tooltip', 'RDS-LOGGER on/off');
-            LoggerButton.style.borderRadius = '0px';
-            LoggerButton.style.width = '100px';
-            LoggerButton.style.position = 'relative';
-            LoggerButton.style.marginTop = '16px';
-            LoggerButton.style.right = '0px';
-            LoggerButton.innerHTML = '<strong>RDS-LOGGER</strong>';
-            LoggerButton.classList.add('bg-color-2');
-            LoggerButton.title = `Plugin Version: ${plugin_version}`;
+						const buttonObserver = new MutationObserver(() => {
+							const $pluginButton = $(`#${buttonId}`);
+							if ($pluginButton.length > 0) {
+								$pluginButton.on('click', function() {
+									// Code to execute on click
+									toggleLogger();
+								});
+									// Additional code
+									buttonObserver.disconnect(); // Stop observing once button is found
+							}
+						});
+						buttonObserver.observe(document.body, { childList: true, subtree: true });
+					}
+				});
 
-            const wrapperElement = document.querySelector('.tuner-info');
-            if (wrapperElement) {
-                const buttonWrapper = document.createElement('div');
-                buttonWrapper.classList.add('button-wrapper');
-                buttonWrapper.id = 'button-wrapper';
-                buttonWrapper.appendChild(LoggerButton);
-                wrapperElement.appendChild(buttonWrapper);
-                const emptyLine = document.createElement('br');
-                wrapperElement.appendChild(emptyLine);
-            }
+				observer.observe(document.body, { childList: true, subtree: true });
 
-            LoggerButton.addEventListener('click', toggleLogger);
-            displaySignalCanvas();
-        }
+				setTimeout(() => {
+					observer.disconnect();
+					if (!functionFound) {
+						console.error(`Function addIconToPluginPanel not found after ${maxWaitTime / 1000} seconds.`);
+					}
+				}, maxWaitTime);
+			})();
 
+			const aRDSLoggerCss = `
+				#${buttonId}:hover {
+					color: var(--color-5);
+					filter: brightness(120%);
+				}
+			`
+			$("<style>")
+				.prop("type", "text/css")
+				.html(aRDSLoggerCss)
+				.appendTo("head");
+		}
+		
         async function checkFileExists(url) {
             try {
                 const response = await fetch(url, { method: 'GET' });
@@ -1482,9 +1498,8 @@ function loadRDSLogger() {
             return utcTime;
         }
 			
-		// Initialize on start
-		initializeLoggerButton();
 		setupBlacklistButton();
+		createButton('Log-on-off');
 		checkBlacklist();
 		delay(1000).then(() => {
 			setupWebSocket();
@@ -1493,27 +1508,27 @@ function loadRDSLogger() {
     })();
 }
 
- // Function to check if the user is logged in as an administrator
-    function checkAdminMode() {
-        const bodyText = document.body.textContent || document.body.innerText;
-        const AdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as an adminstrator.");
+// Function to check if the user is logged in as an administrator
+function checkAdminMode() {
+    const bodyText = document.body.textContent || document.body.innerText;
+    const AdminLoggedIn = bodyText.includes("You are logged in as an administrator.") || bodyText.includes("You are logged in as an adminstrator.");
  
-        if (AdminLoggedIn) {
-            console.log(`Admin mode found`);
-            isTuneAuthenticated = true;
-        } 
-    }
-	    checkAdminMode(); // Check admin mode
+    if (AdminLoggedIn) {
+        console.log(`Admin mode found`);
+        isTuneAuthenticated = true;
+    } 
+}
+	checkAdminMode(); // Check admin mode
 
-  	setTimeout(() => {
-
-	// Execute the plugin version check if updateInfo is true and admin ist logged on
-	if (updateInfo && isTuneAuthenticated) {
-		checkPluginVersion();
+	setTimeout(() => {
+		// Execute the plugin version check if updateInfo is true and admin is logged in
+		if (updateInfo && isTuneAuthenticated) {
+			checkPluginVersion();
 		}
 	}, 200);
 
 })();
+
 			
 const htmlTemplate = `
 <!DOCTYPE html>
@@ -1760,9 +1775,7 @@ const htmlTemplate = `
 		
 		// Get the PI codes from the new input field
         const piCodesInput = document.getElementById("piCodesInput").value;
-		piCodesArray = piCodesInput.split(',')
-			.map(code => code && typeof code === 'string' ? code.trim().split('?').join('') : '') // Remove trailing question marks
-			.filter(code => code); // Trim and filter empty codes
+		piCodesArray = piCodesInput.split(',').map(code => code && typeof code === 'string' ? code.trim().split('?').join('') : '').filter(code => code); // Remove trailing question marks
 
         // Checkbox filter
         const filter150 = document.getElementById("filter150").checked;
@@ -1907,7 +1920,7 @@ const htmlTemplate = `
             '<span class="distance-label">km</span>' + 
 			'<label for="piCodesInput" style="margin-top: 3px; display: block;">Exclude PI Codes (comma separated):</label>' +
 			'<input type="text" id="piCodesInput" placeholder="e.g. 6201,6202,6203" oninput="filterTable()">';
-
+            
         searchContainer.appendChild(filterContainer);
         controlsContainer.appendChild(searchContainer);
 
@@ -1965,3 +1978,4 @@ const htmlTemplate = `
 </body>
 </html>
 `;
+
