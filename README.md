@@ -7,10 +7,9 @@ This plugin provides logging functions for the FM-DX web server.
 
 ![image](https://github.com/user-attachments/assets/672fef04-f4d8-48dc-88b1-7c4b1f2241ad)
 
+## Version 1.7 (only works from web server version 1.3.5!!!)
 
-## Version 1.6d (only works from webserver version 1.2.6!)
-
-- PS code verification improved
+- Design adjustments for web server version 1.3.5
 
 ## Installation notes:
 
@@ -42,6 +41,11 @@ Users who also use the Extended Description plugin should download the modified 
 
 
 ## History: 
+
+### Version 1.6d (only works from webserver version 1.2.6!)
+
+- PS code verification improved
+
 
 ### Version 1.6c (only works from webserver version 1.2.6!)
 
