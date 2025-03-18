@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.7)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.7a)       ///
 ///                                                      ///
-///  by Highpoint                last update: 17.02.25   ///
+///  by Highpoint                last update: 18.02.25   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -20,7 +20,7 @@ let ScannerButtonView = false;
 let UTCtime = true;   
 let updateInfo = true;            
 
-const plugin_version = '1.7'; // Plugin version
+const plugin_version = '1.7a'; // Plugin version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/webserver-logger/';
 const plugin_JSfile = 'main/Logger/logger-plugin.js';
 const plugin_name = 'RDS Logger';
@@ -276,7 +276,7 @@ function loadRDSLogger() {
         // Create the logging canvas and append it to the parent container
         let loggingCanvas = document.createElement("div");
         loggingCanvas.id = "logging-canvas";
-        loggingCanvas.style.height = "80%";
+        loggingCanvas.style.height = "82%";
         loggingCanvas.style.width = "97%";
         loggingCanvas.style.marginTop = "5px";
         loggingCanvas.style.marginRight = "0px";
@@ -309,7 +309,7 @@ function loadRDSLogger() {
             } else if (Screen === 'small') {
                 titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
             } else {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME(UTC)  FREQ    PI       PS         NAME                      CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
             }
         } else {
             if (Screen === 'ultrasmall') {
@@ -317,11 +317,11 @@ function loadRDSLogger() {
             } else if (Screen === 'small') {
                 titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                     CITY                 ITU POL    ERP  DIST   AZ</strong></h2>";
             } else {
-                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                       CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
+                titleDiv.innerHTML = "<h2 style='margin-top: 0px; font-size: 16px;'><strong>DATE        TIME       FREQ    PI       PS         NAME                      CITY                   ITU POL    ERP  DIST   AZ</strong></h2>";
             }
         }
 
-        titleDiv.style.padding = "10px";
+        titleDiv.style.padding = "5px";
         titleDiv.style.display = "block"; // Allow block display to stack elements vertically
         titleDiv.style.fontFamily = "Monospace"; // Customize font
         titleDiv.style.whiteSpace = "nowrap"; // Ensure no line wrapping
@@ -342,8 +342,6 @@ function loadRDSLogger() {
         dataCanvas.style.whiteSpace = "nowrap";
         dataCanvas.style.display = "block"; // Allow block display to stack elements vertically
         dataCanvas.style.width = "max-content"; // Ensure content dictates width
-        dataCanvas.style.height = "65%";
-        dataCanvas.style.maxHeight = "65%";
         scrollContainer.appendChild(dataCanvas);
 
         // Adjust dataCanvas height based on scrollContainer height
@@ -358,9 +356,9 @@ function loadRDSLogger() {
                 dataCanvas.style.maxHeight = "65%";
                 dataCanvas.style.marginTop = "0px";
             } else {
-                dataCanvas.style.height = "48%";
-                dataCanvas.style.maxHeight = "48%";
-                dataCanvas.style.marginTop = "-10px";
+                dataCanvas.style.height = "41%";
+                dataCanvas.style.maxHeight = "41%";
+                dataCanvas.style.marginTop = "0px";
             }
         }
 
@@ -683,7 +681,7 @@ function loadRDSLogger() {
             let ps = "";
             let stationid = "";
 
-            station = Screen === 'ultrasmall' ? truncateString(padRightWithSpaces(data.station, 19), 19) : Screen === 'small' ? truncateString(padRightWithSpaces(data.station, 23), 23) : truncateString(padRightWithSpaces(data.station, 25), 25);
+            station = Screen === 'ultrasmall' ? truncateString(padRightWithSpaces(data.station, 19), 19) : Screen === 'small' ? truncateString(padRightWithSpaces(data.station, 23), 23) : truncateString(padRightWithSpaces(data.station, 24), 24);
             city = Screen === 'ultrasmall' ? truncateString(padRightWithSpaces(data.city, 15), 15) : Screen === 'small' ? truncateString(padRightWithSpaces(data.city, 19), 19) : truncateString(padRightWithSpaces(data.city, 21), 21);
             itu = truncateString(padLeftWithSpaces(data.itu, 3), 3);
             pol = truncateString(data.pol, 1);
@@ -740,7 +738,8 @@ function loadRDSLogger() {
                 const newOutputDiv = document.createElement("div");
                 newOutputDiv.style.whiteSpace = "pre-wrap";
                 newOutputDiv.style.fontSize = "16px";
-                newOutputDiv.style.marginBottom = "-1px";
+                newOutputDiv.style.marginBottom = "-4px";
+				newOutputDiv.style.marginLeft = "-5px";
                 newOutputDiv.style.padding = "0 10px";
                 let lastOutputArray;
 
@@ -1252,6 +1251,7 @@ function loadRDSLogger() {
 
 						const buttonObserver = new MutationObserver(() => {
 							const $pluginButton = $(`#${buttonId}`);
+							$pluginButton.addClass("hide-phone bg-color-2");
 							if ($pluginButton.length > 0) {
 								$pluginButton.on('click', function() {
 									// Code to execute on click
