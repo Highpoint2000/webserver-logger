@@ -9,7 +9,7 @@ This plugin provides logging functions for the FM-DX web server.
 
 ## Version 1.7b (only works from web server version 1.3.5!!!)
 
-- Scanner CSV Log File can be downloaded again via the Download Button
+- Scanner CSV Log File can be downloaded again via the Download button (requires Scanner Plugin Version from 3.4)
 
 ## Installation notes:
 
