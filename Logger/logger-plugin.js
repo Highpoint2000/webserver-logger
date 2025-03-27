@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////
 ///                                                      ///
-///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.7a)       ///
+///  RDS-LOGGER SCRIPT FOR FM-DX-WEBSERVER (V1.7b)       ///
 ///                                                      ///
-///  by Highpoint                last update: 18.02.25   ///
+///  by Highpoint                last update: 27.03.25   ///
 ///                                                      ///
 ///  https://github.com/Highpoint2000/webserver-logger   ///
 ///                                                      ///
@@ -20,7 +20,7 @@ let ScannerButtonView = false;
 let UTCtime = true;   
 let updateInfo = true;            
 
-const plugin_version = '1.7a'; // Plugin version
+const plugin_version = '1.7b'; // Plugin version
 const plugin_path = 'https://raw.githubusercontent.com/highpoint2000/webserver-logger/';
 const plugin_JSfile = 'main/Logger/logger-plugin.js';
 const plugin_name = 'RDS Logger';
@@ -1297,93 +1297,104 @@ function loadRDSLogger() {
             }
         }
 
-        async function downloadDataCSV() {
-            const now = new Date();
-            const currentDate = formatDate(now);
-            const currentTime = formatTime(now);
-            const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
+async function downloadDataCSV() {
+    const now = new Date();
+    const currentDate = formatDate(now);
+    const currentTime = formatTime(now);
+    const filename = `RDS-LOGGER_${currentDate}_${currentTime}.csv`;
 
-            const filterState = getFilterStateFromCookie().state;
-            const scannerState = getScannerStateFromCookie().state;
+    const filterState = getFilterStateFromCookie().state;
+    const scannerState = getScannerStateFromCookie().state;
 
-            if (scannerState) {
-                const baseUrl = window.location.origin + '/logs/';
+    if (scannerState) {
+        // Build base URL (current domain and port)
+        const currentDomain = window.location.hostname;
+        const currentPort = window.location.port ? `:${window.location.port}` : '';
+        const baseUrl = `${window.location.protocol}//${currentDomain}${currentPort}`;
 
-                // Parse the current date and calculate the previous date
-                const currentDateFormatted = new Date(currentDate);
-                const previousDateFormatted = new Date(currentDateFormatted);
-                previousDateFormatted.setDate(currentDateFormatted.getDate() - 1);
+        // URL from which the CSV filename will be read
+        const csvFileUrl = `${baseUrl}/logs/CSVfilename`;
 
-                // Format dates as strings in the format YYYY-MM-DD
-                const formattedCurrentDate = currentDateFormatted.toISOString().split('T')[0];
-                const formattedPreviousDate = previousDateFormatted.toISOString().split('T')[0];
-
-                // Create file names based on the presence of filterState
-                const fileNameCurrent = filterState ? `SCANNER_${formattedCurrentDate}_filtered.csv` : `SCANNER_${formattedCurrentDate}.csv`;
-                const fileNamePrevious = filterState ? `SCANNER_${formattedPreviousDate}_filtered.csv` : `SCANNER_${formattedPreviousDate}.csv`;
-
-                // Construct URLs for both current and previous date files
-                const fileUrlCurrent = baseUrl + fileNameCurrent;
-                const fileUrlPrevious = baseUrl + fileNamePrevious;
-
-                // Check if the file for the current date exists
-                const fileExistsCurrent = await checkFileExists(fileUrlCurrent);
-                if (fileExistsCurrent) {
-                    window.open(fileUrlCurrent, '_blank');
-                    return;
-                } else {
-                    // If the current date file doesn't exist, check for the previous date file
-                    const fileExistsPrevious = await checkFileExists(fileUrlPrevious);
-                    if (fileExistsPrevious) {
-                        window.open(fileUrlPrevious, '_blank');
-                        return;
-                    } else {
-                        // If neither file exists, alert the user
-                        alert('File does not exist for current or previous date: ' + fileUrlCurrent + ' or ' + fileUrlPrevious);
-                        return;
-                    }
-                }
+        try {
+            // Fetch the CSV filename from the URL
+            const response = await fetch(csvFileUrl);
+            if (!response.ok) {
+                // If the file does not exist, show a toast with error message
+                sendToast(
+                    'error important', 
+                    'RDS Logger', 
+                    'Scanner CSV logging is disabled!', 
+                    false,
+                    false
+                );
+                return;
             }
+            const fileNameContent = await response.text();
+            const trimmedContent = fileNameContent.trim();
 
-            // File does not exist, proceed to generate the CSV content
-            try {
-                // Initialize CSV data with headers and metadata
-                let allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\n`;
-                allData += filterState ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\n` : `RDS-LOGGER ${currentDate} ${currentTime}\n\n`;
-
-                allData += UTCtime
-                    ? 'date;time(utc);freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n'
-                    : 'date;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n';
-
-                // Determine which data array to use based on FilterState
-                const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
-
-                // Process each line and append it to allData
-                dataToUse.forEach(line => {
-                    // Directly replace delimiters without conditional formatting
-                    const formattedLine = line.replace(/\s*\|\s*/g, ";");
-                    allData += formattedLine + '\n';
-                });
-
-                // Create a Blob from the CSV data
-                const blob = new Blob([allData], { type: "text/csv" });
-
-                // Handle download for different browsers
-                if (window.navigator.msSaveOrOpenBlob) {
-                    window.navigator.msSaveOrOpenBlob(blob, filename);
-                } else {
-                    const link = document.createElement("a");
-                    link.href = window.URL.createObjectURL(blob);
-                    link.download = filename;
-                    document.body.appendChild(link); // Append to body to ensure compatibility
-                    link.click();
-                    document.body.removeChild(link); // Clean up
-                    window.URL.revokeObjectURL(link.href);
-                }
-            } catch (error) {
-                console.error('Error in downloadDataCSV:', error);
+            // Check if "NoFileName" was returned
+            if (trimmedContent === "NoFileName") {
+                sendToast(
+                    'warning',
+                    'RDS Logger',
+                    'No Scanner CSV Logfile currently available!',
+                    false,
+                    false
+                );
+                return;
+            } else {
+                // Build full URL of the CSV file based on the read filename
+                const fileUrl = `${baseUrl}/logs/${trimmedContent}`;
+                window.open(fileUrl, '_blank');
+                return;
             }
+        } catch (error) {
+            console.error('Error in downloadDataCSV:', error);
         }
+    }
+
+    // If scannerState is false, proceed to generate the CSV content
+    try {
+        // Initialize CSV data with headers and metadata
+        let allData = `"${ServerName}"\n"${ServerDescription.replace(/\n/g, ". ")}"\n`;
+        allData += filterState 
+            ? `RDS-LOGGER [FILTER MODE] ${currentDate} ${currentTime}\n\n` 
+            : `RDS-LOGGER ${currentDate} ${currentTime}\n\n`;
+
+        allData += UTCtime
+            ? 'date;time(utc);freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n'
+            : 'date;time;freq;pi;ps;name;city;itu;pol;erp;dist;az;id\n';
+
+        // Determine which data array to use based on filterState
+        const dataToUse = filterState ? FilteredlogDataArray : logDataArray;
+
+        // Process each line and append it to allData
+        dataToUse.forEach(line => {
+            // Directly replace delimiters without conditional formatting
+            const formattedLine = line.replace(/\s*\|\s*/g, ";");
+            allData += formattedLine + '\n';
+        });
+
+        // Create a Blob from the CSV data
+        const blob = new Blob([allData], { type: "text/csv" });
+
+        // Handle download for different browsers
+        if (window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, filename);
+        } else {
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link); // Append to body to ensure compatibility
+            link.click();
+            document.body.removeChild(link); // Clean up
+            window.URL.revokeObjectURL(link.href);
+        }
+    } catch (error) {
+        console.error('Error in downloadDataCSV:', error);
+    }
+}
+
 
         // Cache for API responses
         const apiCache = {};
