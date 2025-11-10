@@ -44,7 +44,8 @@ If you have any questions, would like to report problems, or have suggestions fo
 
 <a href="https://www.buymeacoffee.com/Highpoint" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
 
-## History: 
+<details>
+<summary>History</summary>
 
 ### Version 1.7a (only works from web server version 1.3.5!!!)
 
